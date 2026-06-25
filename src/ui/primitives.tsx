@@ -324,3 +324,9 @@ export function PopoverContent({ children, className, align = "start" }: { child
         </div>
     );
 }
+
+/** Returns a function that closes the enclosing Popover (use inside PopoverContent). */
+export function usePopoverClose() {
+    const ctx = useContext(PopoverContext);
+    return () => ctx?.setOpen(false);
+}

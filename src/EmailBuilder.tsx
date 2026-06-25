@@ -10,7 +10,7 @@ import {
     pointerWithin,
     rectIntersection,
 } from "@dnd-kit/core";
-import { Button, Tabs, TabsContent, TabsList, TabsTrigger, Popover, PopoverContent, PopoverTrigger } from "./ui/primitives";
+import { Button, Tabs, TabsContent, TabsList, TabsTrigger, Popover, PopoverContent, PopoverTrigger, usePopoverClose } from "./ui/primitives";
 import {
     Eye,
     Code,
@@ -26,6 +26,8 @@ import {
     Keyboard,
     Move,
     Plus,
+    MoreHorizontal,
+    ClipboardPaste,
 } from "lucide-react";
 import { cn } from "./ui/utils";
 import { useToast, useUnsavedChanges } from "./ui/hooks";
@@ -95,6 +97,21 @@ interface EmailBuilderProps {
 }
 
 const MAX_HISTORY = 50;
+
+/** An item in the toolbar's "More" overflow menu — runs its action and closes the menu. */
+function MoreMenuItem({ icon, label, onClick }: { icon: React.ReactNode; label: string; onClick: () => void }) {
+    const close = usePopoverClose();
+    return (
+        <button
+            type="button"
+            onClick={() => { onClick(); close(); }}
+            className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-xs text-left hover:bg-accent hover:text-accent-foreground"
+        >
+            <span className="shrink-0">{icon}</span>
+            {label}
+        </button>
+    );
+}
 
 export function EmailBuilder({ initialDocument, onChange, onSave, onBack, fieldGroups, previewSubstitute, onImageUpload, t }: EmailBuilderProps) {
     const { toast } = useToast();
@@ -428,6 +445,33 @@ export function EmailBuilder({ initialDocument, onChange, onSave, onBack, fieldG
         input.click();
     }, [toast]);
 
+    // Copy the current design to the clipboard, and paste one in — a lightweight
+    // way to duplicate a template into another without the file export/import dance.
+    const handleCopyDesign = useCallback(async () => {
+        try {
+            await navigator.clipboard.writeText(exportToJson(document));
+            toast({ title: tr("emailBuilder.designCopied", "Design copied to clipboard") });
+        } catch {
+            toast({ title: tr("emailBuilder.copyFailed", "Couldn't access the clipboard"), variant: "destructive" });
+        }
+    }, [document, toast, tr]);
+
+    const handlePasteDesign = useCallback(async () => {
+        try {
+            const doc = importFromJson(await navigator.clipboard.readText());
+            if (!doc) {
+                toast({ title: tr("emailBuilder.pasteInvalid", "Clipboard has no valid design"), variant: "destructive" });
+                return;
+            }
+            setDocument(doc);
+            setSelectedBlockId(null);
+            setIsDirty(true);
+            toast({ title: tr("emailBuilder.designPasted", "Design pasted") });
+        } catch {
+            toast({ title: tr("emailBuilder.pasteFailed", "Couldn't read the clipboard"), variant: "destructive" });
+        }
+    }, [toast, tr]);
+
     const handleSave = useCallback(async () => {
         const html = await renderEmailHtml(document);
         onSave?.(document, html);
@@ -619,18 +663,22 @@ export function EmailBuilder({ initialDocument, onChange, onSave, onBack, fieldG
                             <Redo className="h-3.5 w-3.5" />
                         </Button>
                         <div className="w-px h-5 bg-border mx-1" />
-                        <Button variant="ghost" size="sm" className="h-7 px-2 gap-1 text-xs" onClick={handleImportJson}>
-                            <Upload className="h-3 w-3" />
-                            {tr("emailBuilder.import", "Import")}
-                        </Button>
-                        <Button variant="ghost" size="sm" className="h-7 px-2 gap-1 text-xs" onClick={handleExportJson}>
-                            <Copy className="h-3 w-3" />
-                            {tr("emailBuilder.json", "JSON")}
-                        </Button>
-                        <Button variant="ghost" size="sm" className="h-7 px-2 gap-1 text-xs" onClick={handleExportHtml}>
-                            <Download className="h-3 w-3" />
-                            {tr("emailBuilder.html", "HTML")}
-                        </Button>
+                        <Popover>
+                            <PopoverTrigger asChild>
+                                <Button variant="ghost" size="sm" className="h-7 px-2 gap-1 text-xs" title={tr("emailBuilder.more", "More")}>
+                                    <MoreHorizontal className="h-3.5 w-3.5" />
+                                    {tr("emailBuilder.more", "More")}
+                                </Button>
+                            </PopoverTrigger>
+                            <PopoverContent align="end" className="w-56 p-1">
+                                <MoreMenuItem icon={<Copy className="h-3.5 w-3.5" />} label={tr("emailBuilder.copyDesign", "Copy design")} onClick={handleCopyDesign} />
+                                <MoreMenuItem icon={<ClipboardPaste className="h-3.5 w-3.5" />} label={tr("emailBuilder.pasteDesign", "Paste design")} onClick={handlePasteDesign} />
+                                <div className="my-1 h-px bg-border" />
+                                <MoreMenuItem icon={<Upload className="h-3.5 w-3.5" />} label={tr("emailBuilder.importDesign", "Import design (JSON)")} onClick={handleImportJson} />
+                                <MoreMenuItem icon={<Download className="h-3.5 w-3.5" />} label={tr("emailBuilder.exportDesign", "Export design (JSON)")} onClick={handleExportJson} />
+                                <MoreMenuItem icon={<Code className="h-3.5 w-3.5" />} label={tr("emailBuilder.downloadHtml", "Download HTML")} onClick={handleExportHtml} />
+                            </PopoverContent>
+                        </Popover>
                         <Button variant="ghost" size="sm" className="h-7 px-2 gap-1 text-xs" onClick={() => setSelectedBlockId(null)} title={tr("emailBuilder.settings", "Email settings")}>
                             <Settings className="h-3 w-3" />
                             {tr("emailBuilder.settingsShort", "Settings")}
