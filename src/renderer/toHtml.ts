@@ -2,6 +2,7 @@ import {
     EmailDocument,
     EmailSettings,
     Padding,
+    DEFAULT_BORDER,
     AnyBlock,
     CustomBlock,
     TextBlock,
@@ -55,6 +56,12 @@ export function renderToHtml(doc: { settings: EmailSettings; blocks: AnyBlock[] 
         .filter(Boolean);
     const customCss = sanitizeCss([(settings.customCss ?? "").trim(), ...blockCss].filter(Boolean).join("\n\n"));
 
+    // Optional border around the content area (from Email settings).
+    const cb = settings.contentBorder ?? DEFAULT_BORDER;
+    const contentBorderCss =
+        (cb.width > 0 && cb.style !== "none" ? `border:${cb.width}px ${cb.style} ${cb.color};` : "") +
+        (cb.radius > 0 ? `border-radius:${cb.radius}px;` : "");
+
     return `<!DOCTYPE html>
 <html lang="en" xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -90,7 +97,7 @@ ${settings.preheaderText ? `<div style="display:none;font-size:1px;color:#ffffff
 <body style="margin:0;padding:0;background-color:${settings.backgroundColor};font-family:${settings.fontFamily};color:${settings.textColor};">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:${settings.backgroundColor};">
 <tr><td align="center" style="padding:20px 0;">
-<table role="presentation" class="eb-container" width="${settings.contentWidth}" cellpadding="0" cellspacing="0" border="0" style="max-width:${settings.contentWidth}px;width:100%;background-color:${settings.contentBackgroundColor};">
+<table role="presentation" class="eb-container" width="${settings.contentWidth}" cellpadding="0" cellspacing="0" border="0" style="max-width:${settings.contentWidth}px;width:100%;background-color:${settings.contentBackgroundColor};${contentBorderCss}">
 ${bodyContent}
 </table>
 </td></tr>

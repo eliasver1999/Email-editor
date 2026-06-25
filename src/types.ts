@@ -230,6 +230,8 @@ export interface EmailSettings {
     preheaderText: string;
     /** Document-level custom CSS, injected into the email <head> (applies to the whole email) */
     customCss: string;
+    /** Border around the content area (the email body). Width 0 / style "none" = no border. */
+    contentBorder: BorderStyle;
 }
 
 // --- Personalization / merge tags ---
@@ -291,4 +293,5 @@ export const DEFAULT_SETTINGS: EmailSettings = {
     linkColor: "#22c55e",
     preheaderText: "",
     customCss: "",
+    contentBorder: { ...DEFAULT_BORDER },
 };

@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import { EmailBlock, Padding, TextBlock, HeadingBlock, ImageBlock, ButtonBlock, DividerBlock, SpacerBlock, SocialBlock, HtmlBlock, LogoBlock, FooterBlock, VideoBlock, QuoteBlock, ColumnsBlock, ColumnConfig, EmailSettings, MergeFieldGroup } from "../types";
+import { EmailBlock, Padding, TextBlock, HeadingBlock, ImageBlock, ButtonBlock, DividerBlock, SpacerBlock, SocialBlock, HtmlBlock, LogoBlock, FooterBlock, VideoBlock, QuoteBlock, ColumnsBlock, ColumnConfig, EmailSettings, MergeFieldGroup, BorderStyle, DEFAULT_BORDER } from "../types";
 import { Input, Label, Button, Slider, ScrollArea, Separator, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Popover, PopoverContent, PopoverTrigger, Tabs, TabsList, TabsTrigger, TabsContent } from "../ui/primitives";
 import { CodeEditor } from "../ui/CodeEditor";
 import { useTr } from "../i18n";
@@ -617,6 +617,7 @@ export function EmailSettingsPanel({
     onUpdate: (u: Partial<EmailSettings>) => void;
 }) {
     const tr = useTr();
+    const border = settings.contentBorder ?? DEFAULT_BORDER;
     return (
         <div className="h-full flex flex-col">
             <div className="px-4 pt-4 pb-2">
@@ -644,6 +645,25 @@ export function EmailSettingsPanel({
                     <ColorInput label={tr("emailBuilder.settingsPanel.contentBackground", "Content background")} value={settings.contentBackgroundColor} onChange={(v) => onUpdate({ contentBackgroundColor: v })} />
                     <ColorInput label={tr("emailBuilder.settingsPanel.textColor", "Text color")} value={settings.textColor} onChange={(v) => onUpdate({ textColor: v })} />
                     <ColorInput label={tr("emailBuilder.settingsPanel.linkColor", "Link color")} value={settings.linkColor} onChange={(v) => onUpdate({ linkColor: v })} />
+                    <Separator />
+                    <div className="space-y-3">
+                        <Label className="text-xs font-medium">{tr("emailBuilder.settingsPanel.border", "Border")}</Label>
+                        <SliderField label={tr("emailBuilder.settingsPanel.borderWidth", "Width")} value={border.width} min={0} max={10} onChange={(v) => onUpdate({ contentBorder: { ...border, width: v } })} suffix="px" />
+                        <div>
+                            <Label className="text-xs">{tr("emailBuilder.settingsPanel.borderStyle", "Style")}</Label>
+                            <Select value={border.style} onValueChange={(v) => onUpdate({ contentBorder: { ...border, style: v as BorderStyle["style"] } })}>
+                                <SelectTrigger className="h-8 mt-1"><SelectValue /></SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="none">{tr("emailBuilder.settingsPanel.borderNone", "None")}</SelectItem>
+                                    <SelectItem value="solid">{tr("emailBuilder.settingsPanel.borderSolid", "Solid")}</SelectItem>
+                                    <SelectItem value="dashed">{tr("emailBuilder.settingsPanel.borderDashed", "Dashed")}</SelectItem>
+                                    <SelectItem value="dotted">{tr("emailBuilder.settingsPanel.borderDotted", "Dotted")}</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+                        <ColorInput label={tr("emailBuilder.settingsPanel.borderColor", "Color")} value={border.color} onChange={(v) => onUpdate({ contentBorder: { ...border, color: v } })} />
+                        <SliderField label={tr("emailBuilder.settingsPanel.borderRadius", "Corner radius")} value={border.radius} min={0} max={40} onChange={(v) => onUpdate({ contentBorder: { ...border, radius: v } })} suffix="px" />
+                    </div>
                     <Separator />
                     <div>
                         <Label className="text-xs">{tr("emailBuilder.settingsPanel.customCss", "Custom CSS")}</Label>

@@ -23,7 +23,6 @@ import {
     Monitor,
     Smartphone,
     Copy,
-    Keyboard,
     Move,
     Plus,
     MoreHorizontal,
@@ -81,6 +80,8 @@ interface EmailBuilderProps {
     fieldGroups?: MergeFieldGroup[];
     /** Upload handler for image/logo/thumbnail fields. Receives the picked File, returns a hosted URL. Omit to keep fields URL-only. */
     onImageUpload?: ImageUploadFn;
+    /** Show a drop shadow around the canvas in edit mode (off by default). */
+    canvasShadow?: boolean;
     /**
      * Optional transform applied to the compiled HTML in the Preview tab only —
      * e.g. substitute `{{merge_tags}}` with sample values so the preview shows
@@ -113,7 +114,7 @@ function MoreMenuItem({ icon, label, onClick }: { icon: React.ReactNode; label: 
     );
 }
 
-export function EmailBuilder({ initialDocument, onChange, onSave, onBack, fieldGroups, previewSubstitute, onImageUpload, t }: EmailBuilderProps) {
+export function EmailBuilder({ initialDocument, onChange, onSave, onBack, fieldGroups, previewSubstitute, onImageUpload, canvasShadow, t }: EmailBuilderProps) {
     const { toast } = useToast();
     const tr = useMemo(() => makeTr(t), [t]);
 
@@ -685,34 +686,6 @@ export function EmailBuilder({ initialDocument, onChange, onSave, onBack, fieldG
                             <Settings className="h-3 w-3" />
                             {tr("emailBuilder.settingsShort", "Settings")}
                         </Button>
-                        <Popover>
-                            <PopoverTrigger asChild>
-                                <Button variant="ghost" size="icon" className="h-7 w-7" title={tr("emailBuilder.shortcuts", "Keyboard shortcuts")}>
-                                    <Keyboard className="h-3.5 w-3.5" />
-                                </Button>
-                            </PopoverTrigger>
-                            <PopoverContent align="end" className="w-64 p-3">
-                                <h4 className="font-semibold text-sm mb-2">{tr("emailBuilder.shortcuts", "Keyboard shortcuts")}</h4>
-                                <div className="space-y-1.5 text-xs">
-                                    {[
-                                        ["Ctrl+S", "Save"],
-                                        ["Ctrl+Z", "Undo"],
-                                        ["Ctrl+Shift+Z", "Redo"],
-                                        ["Delete", "Delete block"],
-                                        ["Ctrl+D", "Duplicate block"],
-                                        ["Escape", "Deselect"],
-                                        ["Ctrl+↑", "Move block up"],
-                                        ["Ctrl+↓", "Move block down"],
-                                        ["Ctrl+Shift+P", "Toggle preview"],
-                                    ].map(([key, label]) => (
-                                        <div key={key} className="flex items-center justify-between">
-                                            <span className="text-muted-foreground">{label}</span>
-                                            <kbd className="px-1.5 py-0.5 bg-muted rounded text-[10px] font-mono">{key}</kbd>
-                                        </div>
-                                    ))}
-                                </div>
-                            </PopoverContent>
-                        </Popover>
                         <div className="w-px h-5 bg-border mx-1" />
                         <Button size="sm" className="h-7 bg-primary gap-1" onClick={handleSave}>
                             Save
@@ -735,6 +708,7 @@ export function EmailBuilder({ initialDocument, onChange, onSave, onBack, fieldG
                             selectedBlockId={selectedBlockId}
                             onSelectBlock={setSelectedBlockId}
                             isDragging={isDragging}
+                            shadow={canvasShadow}
                             onEditContent={(id, content) => updateBlock(id, { content } as Partial<EmailBlock>)}
                         />
 

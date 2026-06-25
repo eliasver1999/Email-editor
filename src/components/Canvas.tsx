@@ -12,6 +12,8 @@ interface CanvasProps {
     onSelectBlock: (id: string | null) => void;
     isPreview?: boolean;
     isDragging?: boolean;
+    /** Drop shadow around the canvas content area (off by default). */
+    shadow?: boolean;
     /** Commit inline-edited content for a block (canvas edit mode). */
     onEditContent?: (id: string, content: string) => void;
 }
@@ -216,7 +218,7 @@ function ColumnDropZone({
     );
 }
 
-export function Canvas({ blocks, settings, selectedBlockId, onSelectBlock, isPreview, isDragging, onEditContent }: CanvasProps) {
+export function Canvas({ blocks, settings, selectedBlockId, onSelectBlock, isPreview, isDragging, shadow, onEditContent }: CanvasProps) {
     const tr = useTr();
     const { setNodeRef: setCanvasRef, isOver: isCanvasOver } = useDroppable({
         id: "canvas-root",
@@ -232,13 +234,17 @@ export function Canvas({ blocks, settings, selectedBlockId, onSelectBlock, isPre
             }}
         >
             <div
-                className="mx-auto my-6 shadow-lg flex flex-col"
+                className={cn("mx-auto my-6 flex flex-col", shadow && "shadow-lg")}
                 style={{
                     maxWidth: `${settings.contentWidth}px`,
                     backgroundColor: settings.contentBackgroundColor,
                     fontFamily: settings.fontFamily,
                     color: settings.textColor,
                     minHeight: "500px",
+                    border: settings.contentBorder && settings.contentBorder.width > 0 && settings.contentBorder.style !== "none"
+                        ? `${settings.contentBorder.width}px ${settings.contentBorder.style} ${settings.contentBorder.color}`
+                        : undefined,
+                    borderRadius: settings.contentBorder && settings.contentBorder.radius > 0 ? settings.contentBorder.radius : undefined,
                 }}
             >
                 {blocks.length === 0 ? (
