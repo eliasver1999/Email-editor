@@ -5,6 +5,12 @@ All notable changes to this project are documented here. The format is based on
 [Semantic Versioning](https://semver.org/). While pre-1.0, minor versions may
 include breaking changes.
 
+## [Unreleased]
+
+### Changed
+
+- New blocks default to **no padding** (avoids inset/full-bleed layout issues); set padding per-block in the Properties panel as needed.
+
 ## [0.1.0] - 2026-06-25
 
 Initial public release.

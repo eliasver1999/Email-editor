@@ -279,7 +279,7 @@ export const BLOCK_CATALOG: BlockCatalogItem[] = [
 
 // --- Defaults ---
 
-export const DEFAULT_PADDING: Padding = { top: 10, right: 20, bottom: 10, left: 20 };
+export const DEFAULT_PADDING: Padding = { top: 0, right: 0, bottom: 0, left: 0 };
 export const DEFAULT_BORDER: BorderStyle = { width: 0, style: "solid", color: "#000000", radius: 0 };
 
 export const DEFAULT_SETTINGS: EmailSettings = {
