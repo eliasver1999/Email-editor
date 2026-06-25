@@ -64,6 +64,7 @@ import { BlockSidebar } from "./components/BlockSidebar";
 import { PropertyPanel, EmailSettingsPanel } from "./components/PropertyPanel";
 import { exportToJson, importFromJson, renderEmailHtml } from "./renderer/toHtml";
 import { BuilderI18nContext, makeTr } from "./i18n";
+import { ImageUploadContext, type ImageUploadFn } from "./upload";
 
 interface EmailBuilderProps {
     /** Initial document to load */
@@ -76,6 +77,8 @@ interface EmailBuilderProps {
     onBack?: () => void;
     /** Personalization tokens (e.g. from useTemplateFields) for the insert-field menu. */
     fieldGroups?: MergeFieldGroup[];
+    /** Upload handler for image/logo/thumbnail fields. Receives the picked File, returns a hosted URL. Omit to keep fields URL-only. */
+    onImageUpload?: ImageUploadFn;
     /**
      * Optional transform applied to the compiled HTML in the Preview tab only —
      * e.g. substitute `{{merge_tags}}` with sample values so the preview shows
@@ -93,7 +96,7 @@ interface EmailBuilderProps {
 
 const MAX_HISTORY = 50;
 
-export function EmailBuilder({ initialDocument, onChange, onSave, onBack, fieldGroups, previewSubstitute, t }: EmailBuilderProps) {
+export function EmailBuilder({ initialDocument, onChange, onSave, onBack, fieldGroups, previewSubstitute, onImageUpload, t }: EmailBuilderProps) {
     const { toast } = useToast();
     const tr = useMemo(() => makeTr(t), [t]);
 
@@ -546,6 +549,7 @@ export function EmailBuilder({ initialDocument, onChange, onSave, onBack, fieldG
 
     return (
         <BuilderI18nContext.Provider value={t}>
+        <ImageUploadContext.Provider value={onImageUpload}>
         <div className="email-builder">
         <DndContext sensors={sensors} collisionDetection={rectIntersection} onDragStart={handleDragStart} onDragEnd={handleDragEnd} onDragCancel={handleDragCancel}>
             <div className="flex flex-col h-[calc(100vh-140px)]">
@@ -783,6 +787,7 @@ export function EmailBuilder({ initialDocument, onChange, onSave, onBack, fieldG
             </DragOverlay>
         </DndContext>
         </div>
+        </ImageUploadContext.Provider>
         </BuilderI18nContext.Provider>
     );
 }

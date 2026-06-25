@@ -1,8 +1,10 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { EmailBlock, Padding, TextBlock, HeadingBlock, ImageBlock, ButtonBlock, DividerBlock, SpacerBlock, SocialBlock, HtmlBlock, LogoBlock, FooterBlock, VideoBlock, QuoteBlock, ColumnsBlock, ColumnConfig, EmailSettings, MergeFieldGroup } from "../types";
 import { Input, Label, Button, Slider, ScrollArea, Separator, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Popover, PopoverContent, PopoverTrigger, Tabs, TabsList, TabsTrigger, TabsContent } from "../ui/primitives";
 import { CodeEditor } from "../ui/CodeEditor";
 import { useTr } from "../i18n";
+import { useImageUpload } from "../upload";
+import { toast } from "../ui/hooks";
 import {
     AlignLeft,
     AlignCenter,
@@ -13,6 +15,8 @@ import {
     Eye,
     Settings,
     Braces,
+    Upload,
+    Loader2,
 } from "lucide-react";
 
 /** Popover menu of personalization tokens; clicking one inserts it. */
@@ -192,13 +196,78 @@ function HeadingProps({ block, update }: { block: HeadingBlock; update: (u: Part
     );
 }
 
+/**
+ * URL text field with an optional "upload" button. The button appears only when
+ * the host passes `<EmailBuilder onImageUpload={…} />`; otherwise the field stays
+ * URL-only. On pick it calls the host uploader and writes the returned URL.
+ */
+function ImageInput({ value, onChange, placeholder }: { value: string; onChange: (url: string) => void; placeholder?: string }) {
+    const tr = useTr();
+    const onImageUpload = useImageUpload();
+    const inputRef = useRef<HTMLInputElement>(null);
+    const [uploading, setUploading] = useState(false);
+
+    const handleFile = async (file: File | undefined) => {
+        if (!file || !onImageUpload) return;
+        setUploading(true);
+        try {
+            const url = await onImageUpload(file);
+            if (url) onChange(url);
+        } catch (err) {
+            toast({
+                title: tr("emailBuilder.prop.uploadFailed", "Image upload failed"),
+                description: err instanceof Error ? err.message : undefined,
+                variant: "destructive",
+            });
+        } finally {
+            setUploading(false);
+        }
+    };
+
+    return (
+        <div className="mt-1 flex items-center gap-1.5">
+            <Input
+                className="h-8 text-xs flex-1"
+                placeholder={placeholder ?? "https://..."}
+                value={value}
+                onChange={(e) => onChange(e.target.value)}
+            />
+            {onImageUpload && (
+                <>
+                    <input
+                        ref={inputRef}
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={(e) => {
+                            handleFile(e.target.files?.[0]);
+                            e.target.value = ""; // allow re-picking the same file
+                        }}
+                    />
+                    <Button
+                        type="button"
+                        variant="outline"
+                        size="icon"
+                        className="h-8 w-8 shrink-0"
+                        disabled={uploading}
+                        title={tr("emailBuilder.prop.uploadImage", "Upload image")}
+                        onClick={() => inputRef.current?.click()}
+                    >
+                        {uploading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Upload className="h-3.5 w-3.5" />}
+                    </Button>
+                </>
+            )}
+        </div>
+    );
+}
+
 function ImageProps({ block, update }: { block: ImageBlock; update: (u: Partial<ImageBlock>) => void }) {
     const tr = useTr();
     return (
         <div className="space-y-3">
             <div>
                 <Label className="text-xs">{tr("emailBuilder.prop.imageUrl", "Image URL")}</Label>
-                <Input className="h-8 mt-1 text-xs" placeholder="https://..." value={block.src} onChange={(e) => update({ src: e.target.value })} />
+                <ImageInput value={block.src} onChange={(src) => update({ src })} />
             </div>
             <div>
                 <Label className="text-xs">{tr("emailBuilder.prop.altText", "Alt Text")}</Label>
@@ -351,7 +420,7 @@ function LogoProps({ block, update }: { block: LogoBlock; update: (u: Partial<Lo
         <div className="space-y-3">
             <div>
                 <Label className="text-xs">{tr("emailBuilder.prop.logoUrl", "Logo URL")}</Label>
-                <Input className="h-8 mt-1 text-xs" placeholder="https://..." value={block.src} onChange={(e) => update({ src: e.target.value })} />
+                <ImageInput value={block.src} onChange={(src) => update({ src })} />
             </div>
             <div>
                 <Label className="text-xs">{tr("emailBuilder.prop.altText", "Alt Text")}</Label>
@@ -392,7 +461,7 @@ function VideoProps({ block, update }: { block: VideoBlock; update: (u: Partial<
         <div className="space-y-3">
             <div>
                 <Label className="text-xs">{tr("emailBuilder.prop.thumbnailUrl", "Thumbnail URL")}</Label>
-                <Input className="h-8 mt-1 text-xs" placeholder="https://..." value={block.thumbnailUrl} onChange={(e) => update({ thumbnailUrl: e.target.value })} />
+                <ImageInput value={block.thumbnailUrl} onChange={(url) => update({ thumbnailUrl: url })} />
             </div>
             <div>
                 <Label className="text-xs">{tr("emailBuilder.prop.videoUrl", "Video URL")}</Label>

@@ -187,6 +187,23 @@ export type EmailBlock =
     | VideoBlock
     | QuoteBlock;
 
+/**
+ * A third-party block. Same base shape as the built-ins, but `type` is an
+ * arbitrary id and the rest of the data is open. Rendered via a custom
+ * `BlockRenderer` passed to `renderToHtml(doc, { blocks })`.
+ */
+export interface CustomBlock {
+    id: string;
+    type: string;
+    padding: Padding;
+    backgroundColor: string;
+    hidden?: boolean;
+    [key: string]: unknown;
+}
+
+/** Any block the renderer accepts: a built-in or a custom one. */
+export type AnyBlock = EmailBlock | CustomBlock;
+
 // --- Email document ---
 
 export interface EmailDocument {

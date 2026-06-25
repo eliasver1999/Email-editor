@@ -17,6 +17,12 @@ function App() {
                     console.log("[playground] rendered html:\n", html);
                 }}
                 onBack={() => console.log("[playground] back clicked")}
+                // Demo uploader: a real app would upload to a CDN and return the
+                // hosted URL. A blob: URL is fine for previewing locally.
+                onImageUpload={async (file) => {
+                    console.log("[playground] uploading", file.name, file.type, file.size);
+                    return URL.createObjectURL(file);
+                }}
                 fieldGroups={[
                     {
                         category: "Recipient",

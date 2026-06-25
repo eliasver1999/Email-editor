@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { renderToHtml } from "./toHtml";
+import { renderToHtml, defineBlock } from "./toHtml";
 import {
     createBlock,
     createHeadingBlock,
@@ -9,7 +9,9 @@ import {
     createHtmlBlock,
 } from "../defaults";
 import { DEFAULT_SETTINGS, BLOCK_CATALOG } from "../types";
-import type { EmailBlock, EmailDocument, EmailSettings } from "../types";
+import type { EmailBlock, EmailDocument, EmailSettings, CustomBlock, AnyBlock } from "../types";
+
+const PAD = { top: 0, right: 0, bottom: 0, left: 0 };
 
 function makeDoc(blocks: EmailBlock[], settings: Partial<EmailSettings> = {}): EmailDocument {
     return { settings: { ...DEFAULT_SETTINGS, ...settings }, blocks };
@@ -147,6 +149,40 @@ describe("renderToHtml", () => {
             );
             expect(html).toContain("max-width:480px");
             expect(html).toContain("Inbox preview line");
+        });
+    });
+
+    describe("custom block renderers", () => {
+        interface ProductCardBlock extends CustomBlock {
+            type: "product-card";
+            title: string;
+        }
+
+        it("renders a registered custom block via renderToHtml options", () => {
+            const productCard = defineBlock<ProductCardBlock>({
+                type: "product-card",
+                toHtml: (block, ctx) => ctx.wrapRow(`<div class="pc">${ctx.escapeHtml(block.title)}</div>`),
+            });
+            const blocks: AnyBlock[] = [
+                { id: "p1", type: "product-card", title: "Hats & Co", padding: PAD, backgroundColor: "transparent" } as ProductCardBlock,
+            ];
+            const html = renderToHtml({ settings: DEFAULT_SETTINGS, blocks }, { blocks: [productCard] });
+            expect(html).toContain('<div class="pc">Hats &amp; Co</div>'); // escaped + rendered via wrapRow
+        });
+
+        it("skips blocks whose type has no registered renderer", () => {
+            const blocks: AnyBlock[] = [{ id: "x", type: "totally-unknown", padding: PAD, backgroundColor: "transparent" }];
+            const html = renderToHtml({ settings: DEFAULT_SETTINGS, blocks });
+            expect(html).toContain("<!DOCTYPE html>");
+            expect(html).not.toContain("totally-unknown");
+        });
+
+        it("lets a custom renderer override a built-in type", () => {
+            const override = defineBlock({ type: "text", toHtml: () => "<tr><td>OVERRIDDEN</td></tr>" });
+            const doc = { settings: DEFAULT_SETTINGS, blocks: [{ ...createTextBlock(), content: "original-text" }] };
+            const html = renderToHtml(doc, { blocks: [override] });
+            expect(html).toContain("OVERRIDDEN");
+            expect(html).not.toContain("original-text");
         });
     });
 
