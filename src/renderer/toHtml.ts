@@ -1,4 +1,4 @@
-import { EmailBlock, EmailDocument, EmailSettings, Padding } from "../types";
+import { EmailBlock, EmailDocument, EmailSettings, HtmlBlock, Padding } from "../types";
 
 /**
  * Email-safe PNG icons per social platform. Hosted (icons8) so they render in
@@ -22,10 +22,18 @@ const SOCIAL_ICON: Record<string, string> = {
 export function renderToHtml(doc: EmailDocument): string {
     const { settings, blocks } = doc;
 
-    const bodyContent = blocks
-        .filter((b) => !b.hidden)
-        .map((b) => renderBlock(b, settings))
-        .join("\n");
+    const visibleBlocks = blocks.filter((b) => !b.hidden);
+
+    const bodyContent = visibleBlocks.map((b) => renderBlock(b, settings)).join("\n");
+
+    // Custom CSS (document-level setting + each HTML block's CSS) is hoisted into
+    // <head> — the most widely supported place for <style> in email (vs. inline
+    // in the body). Document CSS comes first so block CSS can build on it.
+    const blockCss = visibleBlocks
+        .filter((b): b is HtmlBlock => b.type === "html")
+        .map((b) => (b.css ?? "").trim())
+        .filter(Boolean);
+    const customCss = sanitizeCss([(settings.customCss ?? "").trim(), ...blockCss].filter(Boolean).join("\n\n"));
 
     return `<!DOCTYPE html>
 <html lang="en" xmlns="http://www.w3.org/1999/xhtml">
@@ -50,13 +58,19 @@ export function renderToHtml(doc: EmailDocument): string {
   img { border: 0; height: auto; line-height: 100%; outline: none; text-decoration: none; -ms-interpolation-mode: bicubic; }
   a { color: ${settings.linkColor}; }
   p { margin: 0 0 10px 0; }
+  /* Responsive: on phones, let the email fill the screen and stack columns. */
+  @media only screen and (max-width: 600px) {
+    .eb-container { width: 100% !important; }
+    .eb-col { display: block !important; width: 100% !important; box-sizing: border-box !important; padding-bottom: 16px !important; }
+    .eb-col-last { padding-bottom: 0 !important; }
+  }${customCss ? `\n  /* Custom CSS (from HTML blocks) */\n${customCss}` : ""}
 </style>
 ${settings.preheaderText ? `<div style="display:none;font-size:1px;color:#ffffff;line-height:1px;max-height:0;max-width:0;opacity:0;overflow:hidden;">${escapeHtml(settings.preheaderText)}</div>` : ""}
 </head>
 <body style="margin:0;padding:0;background-color:${settings.backgroundColor};font-family:${settings.fontFamily};color:${settings.textColor};">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:${settings.backgroundColor};">
 <tr><td align="center" style="padding:20px 0;">
-<table role="presentation" width="${settings.contentWidth}" cellpadding="0" cellspacing="0" border="0" style="max-width:${settings.contentWidth}px;width:100%;background-color:${settings.contentBackgroundColor};">
+<table role="presentation" class="eb-container" width="${settings.contentWidth}" cellpadding="0" cellspacing="0" border="0" style="max-width:${settings.contentWidth}px;width:100%;background-color:${settings.contentBackgroundColor};">
 ${bodyContent}
 </table>
 </td></tr>
@@ -73,6 +87,38 @@ function escapeHtml(str: string): string {
     return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 }
 
+/**
+ * Baseline hardening for user-authored rich HTML (text/heading/footer/custom-HTML
+ * blocks) before it goes into the exported email, the live-preview iframe, and the
+ * code view. Strips active content that has no place in email and is an XSS vector
+ * in the preview: <script>/<iframe>/<object>/<embed>, inline event handlers, and
+ * javascript:/vbscript:/data:text/html URLs. It deliberately keeps formatting and
+ * layout markup (b/i/a/ul/table/style/…). This is a conservative blocklist, not a
+ * full allowlist sanitizer — for untrusted, multi-tenant authoring, run the output
+ * through a dedicated sanitizer (DOMPurify / sanitize-html) as well.
+ */
+function sanitizeRichHtml(html: string): string {
+    return html
+        // Active-content elements, with their contents.
+        .replace(/<(script|iframe|object|embed|noscript)\b[^>]*>[\s\S]*?<\/\1>/gi, "")
+        // Stray / unclosed forms of those, plus tags that never belong in email body.
+        .replace(/<\/?(script|iframe|object|embed|noscript|base|form|input)\b[^>]*>/gi, "")
+        // Inline event handlers: onclick, onerror, onload, …
+        .replace(/\son\w+\s*=\s*("[^"]*"|'[^']*'|[^\s>]+)/gi, "")
+        // Dangerous URL schemes in href/src.
+        .replace(/((?:href|src)\s*=\s*)("|')?\s*(?:javascript|vbscript):[^"'>\s]*/gi, "$1$2#")
+        .replace(/((?:href|src)\s*=\s*)("|')?\s*data:text\/html[^"'>\s]*/gi, "$1$2#");
+}
+
+/**
+ * Custom CSS is hoisted into a <head><style>. A literal `<` lets an author break
+ * out of the style element (`</style><script>…`), so strip it — `<` is never valid
+ * in CSS, and the `>` child combinator is left intact.
+ */
+function sanitizeCss(css: string): string {
+    return css.replace(/</g, "");
+}
+
 function wrapRow(content: string, block: EmailBlock): string {
     const bg = block.backgroundColor !== "transparent" ? `background-color:${block.backgroundColor};` : "";
     return `<tr><td style="padding:${pad(block.padding)};${bg}">${content}</td></tr>`;
@@ -82,14 +128,14 @@ function renderBlock(block: EmailBlock, settings: EmailSettings): string {
     switch (block.type) {
         case "text":
             return wrapRow(
-                `<div style="color:${block.color};font-size:${block.fontSize}px;font-family:${block.fontFamily};line-height:${block.lineHeight};text-align:${block.textAlign};">${block.content}</div>`,
+                `<div style="color:${block.color};font-size:${block.fontSize}px;font-family:${block.fontFamily};line-height:${block.lineHeight};text-align:${block.textAlign};">${sanitizeRichHtml(block.content)}</div>`,
                 block
             );
 
         case "heading": {
             const sizes = { 1: "28px", 2: "22px", 3: "18px" };
             return wrapRow(
-                `<h${block.level} style="margin:0;color:${block.color};font-family:${block.fontFamily};text-align:${block.textAlign};font-size:${sizes[block.level]};">${escapeHtml(block.content)}</h${block.level}>`,
+                `<h${block.level} style="margin:0;color:${block.color};font-family:${block.fontFamily};text-align:${block.textAlign};font-size:${sizes[block.level]};">${sanitizeRichHtml(block.content)}</h${block.level}>`,
                 block
             );
         }
@@ -128,12 +174,15 @@ function renderBlock(block: EmailBlock, settings: EmailSettings): string {
             return `<tr><td style="height:${block.height}px;font-size:0;line-height:0;">&nbsp;</td></tr>`;
 
         case "columns": {
-            const colHtml = block.columns.map((col) => {
+            const colHtml = block.columns.map((col, i) => {
                 const innerBlocks = col.blocks
                     .filter((b) => !b.hidden)
                     .map((b) => renderBlock(b, settings))
                     .join("");
-                return `<td valign="top" width="${col.width}%" style="width:${col.width}%;padding:0 ${block.gap / 2}px;">
+                // eb-col stacks the column full-width on phones (see <head> @media);
+                // eb-col-last drops the inter-column gap after the final one.
+                const colClass = i === block.columns.length - 1 ? "eb-col eb-col-last" : "eb-col";
+                return `<td class="${colClass}" valign="top" width="${col.width}%" style="width:${col.width}%;padding:0 ${block.gap / 2}px;">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
 ${innerBlocks}
 </table></td>`;
@@ -165,7 +214,7 @@ ${innerBlocks}
 
         case "footer":
             return wrapRow(
-                `<div style="color:${block.color};font-size:${block.fontSize}px;text-align:${block.textAlign};line-height:1.5;">${block.content}</div>`,
+                `<div style="color:${block.color};font-size:${block.fontSize}px;text-align:${block.textAlign};line-height:1.5;">${sanitizeRichHtml(block.content)}</div>`,
                 block
             );
 
@@ -187,7 +236,7 @@ ${innerBlocks}
             );
 
         case "html":
-            return wrapRow(block.content, block);
+            return wrapRow(sanitizeRichHtml(block.content), block);
 
         default:
             return "";

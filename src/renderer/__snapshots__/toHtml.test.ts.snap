@@ -1,0 +1,52 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`renderToHtml > renders a full document (kitchen sink) — snapshot 1`] = `
+"<!DOCTYPE html>
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<title>Email</title>
+<!--[if mso]>
+<noscript>
+<xml>
+<o:OfficeDocumentSettings>
+<o:AllowPNG/>
+<o:PixelPerInch>96</o:PixelPerInch>
+</o:OfficeDocumentSettings>
+</xml>
+</noscript>
+<![endif]-->
+<style>
+  body { margin: 0; padding: 0; -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
+  table { border-spacing: 0; border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt; }
+  img { border: 0; height: auto; line-height: 100%; outline: none; text-decoration: none; -ms-interpolation-mode: bicubic; }
+  a { color: #22c55e; }
+  p { margin: 0 0 10px 0; }
+  /* Responsive: on phones, let the email fill the screen and stack columns. */
+  @media only screen and (max-width: 600px) {
+    .eb-container { width: 100% !important; }
+    .eb-col { display: block !important; width: 100% !important; box-sizing: border-box !important; padding-bottom: 16px !important; }
+    .eb-col-last { padding-bottom: 0 !important; }
+  }
+</style>
+
+</head>
+<body style="margin:0;padding:0;background-color:#f4f4f5;font-family:Arial, sans-serif;color:#333333;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#f4f4f5;">
+<tr><td align="center" style="padding:20px 0;">
+<table role="presentation" class="eb-container" width="600" cellpadding="0" cellspacing="0" border="0" style="max-width:600px;width:100%;background-color:#ffffff;">
+<tr><td style="padding:20px 20px 10px 20px;"><h1 style="margin:0;color:#111111;font-family:Arial, sans-serif;text-align:left;font-size:28px;">Heading</h1></td></tr>
+<tr><td style="padding:10px 20px 10px 20px;"><div style="color:#333333;font-size:14px;font-family:Arial, sans-serif;line-height:1.6;text-align:left;"><p>Type your text here...</p></div></td></tr>
+<tr><td style="padding:15px 20px 15px 20px;background-color:#22c55e;"><div style="text-align:center;"><!--[if mso]><v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="#" style="height:auto;v-text-anchor:middle;display:inline-block;" arcsize="15%" stroke="f" fillcolor="#22c55e"><w:anchorlock/><center><![endif]--><a href="#" target="_blank" style="display:inline-block;background-color:#22c55e;color:#ffffff;font-size:16px;font-family:Arial, sans-serif;border-radius:6px;padding:12px 28px;text-decoration:none;font-weight:bold;text-align:center;mso-padding-alt:0;">Click Here</a><!--[if mso]></center></v:roundrect><![endif]--></div></td></tr>
+<tr><td style="padding:10px 20px 10px 20px;"><hr style="border:none;border-top:1px solid #e5e7eb;width:100%;margin:0 auto;" /></td></tr>
+<tr><td style="height:30px;font-size:0;line-height:0;">&nbsp;</td></tr>
+<tr><td style="padding:15px 20px 15px 20px;"><div style="border-left:4px solid #22c55e;padding-left:16px;text-align:left;"><p style="color:#555555;font-size:16px;font-style:italic;margin:0 0 8px 0;line-height:1.6;">"This is a great quote that adds credibility to your email."</p><p style="color:#999;font-size:14px;margin:0;">— Author Name</p></div></td></tr>
+<tr><td style="padding:20px 20px 20px 20px;background-color:#f9fafb;"><div style="color:#999999;font-size:12px;text-align:center;line-height:1.5;"><p style="margin:0;">© 2026 Your Company. All rights reserved.</p><p style="margin:4px 0 0;"><a href="#">Unsubscribe</a> · <a href="#">Privacy Policy</a></p></div></td></tr>
+</table>
+</td></tr>
+</table>
+</body>
+</html>"
+`;

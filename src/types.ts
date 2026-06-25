@@ -131,6 +131,7 @@ export interface SocialBlock extends BaseBlock {
 export interface HtmlBlock extends BaseBlock {
     type: "html";
     content: string; // raw HTML
+    css: string; // raw CSS, emitted in a <style> tag (hoisted to the email <head> on export)
 }
 
 export interface LogoBlock extends BaseBlock {
@@ -210,6 +211,8 @@ export interface EmailSettings {
     linkColor: string;
     /** Preheader text (preview text in inbox) */
     preheaderText: string;
+    /** Document-level custom CSS, injected into the email <head> (applies to the whole email) */
+    customCss: string;
 }
 
 // --- Personalization / merge tags ---
@@ -270,4 +273,5 @@ export const DEFAULT_SETTINGS: EmailSettings = {
     textColor: "#333333",
     linkColor: "#22c55e",
     preheaderText: "",
+    customCss: "",
 };

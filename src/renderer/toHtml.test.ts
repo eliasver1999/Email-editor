@@ -1,0 +1,160 @@
+import { describe, it, expect } from "vitest";
+import { renderToHtml } from "./toHtml";
+import {
+    createBlock,
+    createHeadingBlock,
+    createTextBlock,
+    createButtonBlock,
+    createImageBlock,
+    createHtmlBlock,
+} from "../defaults";
+import { DEFAULT_SETTINGS, BLOCK_CATALOG } from "../types";
+import type { EmailBlock, EmailDocument, EmailSettings } from "../types";
+
+function makeDoc(blocks: EmailBlock[], settings: Partial<EmailSettings> = {}): EmailDocument {
+    return { settings: { ...DEFAULT_SETTINGS, ...settings }, blocks };
+}
+
+describe("renderToHtml", () => {
+    it("renders a full document (kitchen sink) — snapshot", () => {
+        const blocks: EmailBlock[] = [
+            createBlock("heading"),
+            createBlock("text"),
+            createBlock("button"),
+            createBlock("divider"),
+            createBlock("spacer"),
+            createBlock("quote"),
+            createBlock("footer"),
+        ];
+        expect(renderToHtml(makeDoc(blocks))).toMatchSnapshot();
+    });
+
+    it("emits a valid, email-safe document skeleton", () => {
+        const html = renderToHtml(makeDoc([createBlock("text")]));
+        expect(html).toContain("<!DOCTYPE html>");
+        expect(html).toContain('role="presentation"'); // layout tables, not data tables
+        expect(html).toMatch(/<body[^>]*>/);
+    });
+
+    describe("responsive", () => {
+        it("includes the mobile media query, fluid container, and column-stacking classes", () => {
+            const html = renderToHtml(makeDoc([createBlock("columns")]));
+            expect(html).toContain("@media only screen and (max-width: 600px)");
+            expect(html).toContain('class="eb-container"');
+            expect(html).toContain("eb-col");
+            expect(html).toContain("eb-col-last"); // last column drops the inter-column gap
+        });
+    });
+
+    describe("custom CSS hoisting", () => {
+        it("hoists document CSS and block CSS into <head>, document first", () => {
+            const htmlBlock = { ...createHtmlBlock(), css: ".block-css{color:red}", content: "<p>x</p>" };
+            const html = renderToHtml(makeDoc([htmlBlock], { customCss: ".doc-css{color:blue}" }));
+            const headEnd = html.indexOf("</head>");
+            const docIdx = html.indexOf(".doc-css{color:blue}");
+            const blockIdx = html.indexOf(".block-css{color:red}");
+
+            expect(docIdx).toBeGreaterThan(-1);
+            expect(blockIdx).toBeGreaterThan(-1);
+            expect(docIdx).toBeLessThan(headEnd); // in <head>
+            expect(blockIdx).toBeLessThan(headEnd);
+            expect(docIdx).toBeLessThan(blockIdx); // document CSS comes first
+        });
+
+        it("does not emit a custom-CSS section when there is none", () => {
+            const html = renderToHtml(makeDoc([createBlock("text")]));
+            expect(html).not.toContain("Custom CSS");
+        });
+    });
+
+    describe("escaping vs. rich text", () => {
+        it("escapes attribute/text fields that are not rich (button text, image alt)", () => {
+            const btn = { ...createButtonBlock(), text: '<script>alert("x")</script>' };
+            const img = { ...createImageBlock(), src: "https://e.com/a.png", alt: 'a "b" c' };
+            const html = renderToHtml(makeDoc([btn, img]));
+            expect(html).toContain("&lt;script&gt;");
+            expect(html).not.toContain('<script>alert');
+            expect(html).toContain('alt="a &quot;b&quot; c"');
+        });
+
+        it("emits heading and text content as raw HTML (rich-text blocks)", () => {
+            const heading = { ...createHeadingBlock(), content: "Hi <b>bold</b>" };
+            const text = { ...createTextBlock(), content: '<a href="https://e.com">link</a>' };
+            const html = renderToHtml(makeDoc([heading, text]));
+            expect(html).toContain("Hi <b>bold</b>");
+            expect(html).toContain('<a href="https://e.com">link</a>');
+        });
+    });
+
+    describe("sanitization", () => {
+        it("strips <script> from rich content", () => {
+            const text = { ...createTextBlock(), content: "Hi<script>alert(1)</script> there" };
+            const html = renderToHtml(makeDoc([text]));
+            expect(html).not.toContain("<script>");
+            expect(html).not.toContain("alert(1)");
+            expect(html).toContain("Hi");
+            expect(html).toContain("there");
+        });
+
+        it("strips inline event handlers", () => {
+            const text = { ...createTextBlock(), content: '<img src="x" onerror="alert(1)">' };
+            const html = renderToHtml(makeDoc([text]));
+            expect(html).not.toMatch(/onerror/i);
+        });
+
+        it("neutralizes javascript: links", () => {
+            const text = { ...createTextBlock(), content: '<a href="javascript:alert(1)">x</a>' };
+            const html = renderToHtml(makeDoc([text]));
+            expect(html).not.toContain("javascript:");
+        });
+
+        it("strips <iframe> from the custom HTML block", () => {
+            const block = { ...createHtmlBlock(), content: '<iframe src="https://evil.test"></iframe><p>ok</p>' };
+            const html = renderToHtml(makeDoc([block]));
+            expect(html).not.toContain("<iframe");
+            expect(html).toContain("<p>ok</p>");
+        });
+
+        it("prevents </style> breakout from custom CSS", () => {
+            const html = renderToHtml(makeDoc([createBlock("text")], { customCss: ".x{}</style><script>alert(1)</script>" }));
+            expect(html).not.toContain("</style><script>");
+            expect(html).not.toContain("<script>alert(1)");
+        });
+
+        it("keeps safe formatting markup", () => {
+            const text = { ...createTextBlock(), content: '<b>x</b> <a href="https://ok.test">y</a> <ul><li>z</li></ul>' };
+            const html = renderToHtml(makeDoc([text]));
+            expect(html).toContain("<b>x</b>");
+            expect(html).toContain('href="https://ok.test"');
+            expect(html).toContain("<li>z</li>");
+        });
+    });
+
+    describe("visibility", () => {
+        it("omits blocks marked hidden", () => {
+            const visible = { ...createHeadingBlock(), content: "VISIBLE_CONTENT" };
+            const hidden = { ...createHeadingBlock(), content: "HIDDEN_CONTENT", hidden: true };
+            const html = renderToHtml(makeDoc([visible, hidden]));
+            expect(html).toContain("VISIBLE_CONTENT");
+            expect(html).not.toContain("HIDDEN_CONTENT");
+        });
+    });
+
+    describe("settings", () => {
+        it("applies content width and preheader text", () => {
+            const html = renderToHtml(
+                makeDoc([createBlock("text")], { contentWidth: 480, preheaderText: "Inbox preview line" })
+            );
+            expect(html).toContain("max-width:480px");
+            expect(html).toContain("Inbox preview line");
+        });
+    });
+
+    it("renders every catalog block type without throwing", () => {
+        for (const entry of BLOCK_CATALOG) {
+            const html = renderToHtml(makeDoc([createBlock(entry.type)]));
+            expect(typeof html).toBe("string");
+            expect(html).toContain("<!DOCTYPE html>");
+        }
+    });
+});

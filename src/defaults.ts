@@ -165,6 +165,7 @@ export function createHtmlBlock(): HtmlBlock {
         id: nanoid(8),
         type: "html",
         content: "<!-- Custom HTML here -->",
+        css: "",
         padding: { ...DEFAULT_PADDING },
         backgroundColor: "transparent",
     };

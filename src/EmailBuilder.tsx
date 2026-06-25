@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo, useEffect, useRef, lazy, Suspense } from "react";
+import { useState, useCallback, useMemo, useEffect, useRef } from "react";
 import {
     DndContext,
     DragEndEvent,
@@ -29,10 +29,7 @@ import {
 } from "lucide-react";
 import { cn } from "./ui/utils";
 import { useToast, useUnsavedChanges } from "./ui/hooks";
-// Lazy-loaded so Monaco (heavy) is only fetched when the user opens the code
-// view, and consumers who never use it don't pay for it. @monaco-editor/react
-// is an optional peer dependency.
-const MonacoEditor = lazy(() => import("@monaco-editor/react"));
+import { CodeEditor } from "./ui/CodeEditor";
 
 import { EmailBlock, EmailDocument, EmailSettings, BlockType, ColumnsBlock, MergeFieldGroup, DEFAULT_SETTINGS, BLOCK_CATALOG } from "./types";
 
@@ -673,7 +670,7 @@ export function EmailBuilder({ initialDocument, onChange, onSave, onBack, fieldG
                 {viewMode === "edit" && (
                     <div className="flex flex-1 overflow-hidden">
                         {/* Left: Block sidebar */}
-                        <div className="w-72 border-r bg-card shrink-0 overflow-hidden">
+                        <div className="w-80 border-r bg-card shrink-0 overflow-hidden">
                             <BlockSidebar onAddBlock={(type) => addBlock(type)} />
                         </div>
 
@@ -688,7 +685,7 @@ export function EmailBuilder({ initialDocument, onChange, onSave, onBack, fieldG
                         />
 
                         {/* Right: block properties, or email settings when nothing is selected */}
-                        <div className="w-72 border-l bg-card shrink-0 overflow-hidden">
+                        <div className="w-80 border-l bg-card shrink-0 overflow-hidden">
                             {selectedBlock ? (
                                 <PropertyPanel
                                     block={selectedBlock}
@@ -768,31 +765,14 @@ export function EmailBuilder({ initialDocument, onChange, onSave, onBack, fieldG
 
                 {viewMode === "code" && (
                     <div className="flex-1 overflow-hidden">
-                        <Suspense
-                            fallback={
-                                <div className="flex h-full items-center justify-center text-xs text-muted-foreground">
-                                    {tr("emailBuilder.loadingEditor", "Loading editor…")}
-                                </div>
-                            }
-                        >
-                            <MonacoEditor
-                                height="100%"
-                                language="html"
-                                value={compiling ? "<!-- Compiling… -->" : compiledHtml}
-                                theme={typeof window !== "undefined" && window.document.documentElement.classList.contains("dark") ? "vs-dark" : "light"}
-                                options={{
-                                    readOnly: true,
-                                    minimap: { enabled: false },
-                                    fontSize: 12,
-                                    lineNumbers: "on",
-                                    scrollBeyondLastLine: false,
-                                    wordWrap: "on",
-                                    formatOnPaste: true,
-                                    automaticLayout: true,
-                                    padding: { top: 12 },
-                                }}
-                            />
-                        </Suspense>
+                        <CodeEditor
+                            language="html"
+                            readOnly
+                            value={compiling ? "<!-- Compiling… -->" : compiledHtml}
+                            height="100%"
+                            className="h-full overflow-hidden"
+                            ariaLabel={tr("emailBuilder.codeView", "Email HTML")}
+                        />
                     </div>
                 )}
             </div>

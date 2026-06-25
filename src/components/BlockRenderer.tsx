@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { EmailBlock, Padding } from "../types";
 import {
     Type,
@@ -16,7 +16,16 @@ import {
     Linkedin,
     Youtube,
     Globe,
+    Bold,
+    Italic,
+    Underline,
+    Link,
+    List,
+    ListOrdered,
+    RemoveFormatting,
 } from "lucide-react";
+import { cn } from "../ui/utils";
+import { useTr } from "../i18n";
 
 function paddingStyle(p: Padding): React.CSSProperties {
     return { padding: `${p.top}px ${p.right}px ${p.bottom}px ${p.left}px` };
@@ -33,16 +42,20 @@ function EditableContent({
     value,
     editing,
     plainText,
+    allowLists = true,
     onCommit,
     style,
 }: {
     value: string;
     editing: boolean;
     plainText?: boolean;
+    /** Show list buttons in the toolbar (false for headings, where <ul> is invalid). */
+    allowLists?: boolean;
     onCommit: (next: string) => void;
     style?: React.CSSProperties;
 }) {
     const ref = useRef<HTMLDivElement>(null);
+    const [focused, setFocused] = useState(false);
     useEffect(() => {
         const el = ref.current;
         if (!el || document.activeElement === el) return;
@@ -60,16 +73,152 @@ function EditableContent({
         if (next !== value) onCommit(next);
     };
 
+    // Rich (non-plainText) blocks get a formatting toolbar while focused. Its
+    // buttons preventDefault on mousedown so the caret/selection stays here, so
+    // they never fire this element's blur — only leaving the block does.
+    return (
+        <div style={{ position: "relative" }}>
+            {editing && !plainText && focused && (
+                <RichTextToolbar targetRef={ref} allowLists={allowLists} onChanged={() => ref.current && commit(ref.current)} />
+            )}
+            <div
+                ref={ref}
+                contentEditable={editing}
+                suppressContentEditableWarning
+                spellCheck={false}
+                style={{ ...style, outline: "none", cursor: editing ? "text" : undefined }}
+                onFocus={() => setFocused(true)}
+                onInput={(e) => commit(e.currentTarget)}
+                onBlur={(e) => { setFocused(false); commit(e.currentTarget); }}
+            />
+        </div>
+    );
+}
+
+/** A single formatting button. preventDefault on mousedown keeps the editor's selection. */
+function ToolbarButton({ label, active, onAction, children }: {
+    label: string;
+    active?: boolean;
+    onAction: () => void;
+    children: React.ReactNode;
+}) {
+    return (
+        <button
+            type="button"
+            title={label}
+            aria-label={label}
+            aria-pressed={active}
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={onAction}
+            className={cn(
+                "inline-flex h-7 w-7 items-center justify-center rounded text-foreground/80 transition-colors hover:bg-accent hover:text-accent-foreground",
+                active && "bg-accent text-accent-foreground"
+            )}
+        >
+            {children}
+        </button>
+    );
+}
+
+/**
+ * Floating WYSIWYG toolbar for the rich text/footer blocks. Drives the built-in
+ * document.execCommand — deprecated but universally supported and dependency-free,
+ * which fits this lib's no-heavy-editor philosophy. The committed innerHTML
+ * (e.g. <b>, <i>, <a>, <ul>) is what the renderer ships to the email.
+ */
+function RichTextToolbar({ targetRef, onChanged, allowLists = true }: {
+    targetRef: React.RefObject<HTMLDivElement | null>;
+    onChanged: () => void;
+    allowLists?: boolean;
+}) {
+    const tr = useTr();
+    const [active, setActive] = useState({ bold: false, italic: false, underline: false });
+
+    // Reflect the active inline styles at the caret (bold/italic/underline).
+    useEffect(() => {
+        const update = () => {
+            try {
+                setActive({
+                    bold: document.queryCommandState("bold"),
+                    italic: document.queryCommandState("italic"),
+                    underline: document.queryCommandState("underline"),
+                });
+            } catch {
+                /* queryCommandState can throw without an active editable selection */
+            }
+        };
+        document.addEventListener("selectionchange", update);
+        update();
+        return () => document.removeEventListener("selectionchange", update);
+    }, []);
+
+    const exec = (command: string, value?: string) => {
+        const el = targetRef.current;
+        if (!el) return;
+        el.focus();
+        document.execCommand(command, false, value);
+        onChanged();
+    };
+
+    const addLink = () => {
+        const el = targetRef.current;
+        if (!el) return;
+        // window.prompt blurs the editor and may collapse the selection, so save
+        // the range first and restore it before applying the link.
+        const sel = window.getSelection();
+        const saved = sel && sel.rangeCount ? sel.getRangeAt(0).cloneRange() : null;
+        const url = window.prompt(tr("emailBuilder.richText.linkPrompt", "Link URL"), "https://");
+        if (!url) return;
+        el.focus();
+        if (saved && sel) {
+            sel.removeAllRanges();
+            sel.addRange(saved);
+        }
+        document.execCommand("createLink", false, url);
+        onChanged();
+    };
+
+    // Float above the text, but flip below when there isn't room above (e.g. a
+    // text block at the very top of the canvas, where "above" lands under the
+    // editor's header bar). ~100px ≈ header + toolbar height.
+    const el = targetRef.current;
+    const placeBelow = !!el && el.getBoundingClientRect().top < 100;
+
     return (
         <div
-            ref={ref}
-            contentEditable={editing}
-            suppressContentEditableWarning
-            spellCheck={false}
-            style={{ ...style, outline: "none", cursor: editing ? "text" : undefined }}
-            onInput={(e) => commit(e.currentTarget)}
-            onBlur={(e) => commit(e.currentTarget)}
-        />
+            contentEditable={false}
+            onMouseDown={(e) => e.preventDefault()}
+            className="absolute left-0 z-50 flex items-center gap-0.5 rounded-md border border-border bg-popover p-1 text-popover-foreground shadow-md"
+            style={placeBelow ? { top: "calc(100% + 4px)" } : { bottom: "calc(100% + 4px)" }}
+        >
+            <ToolbarButton label={tr("emailBuilder.richText.bold", "Bold")} active={active.bold} onAction={() => exec("bold")}>
+                <Bold className="h-3.5 w-3.5" />
+            </ToolbarButton>
+            <ToolbarButton label={tr("emailBuilder.richText.italic", "Italic")} active={active.italic} onAction={() => exec("italic")}>
+                <Italic className="h-3.5 w-3.5" />
+            </ToolbarButton>
+            <ToolbarButton label={tr("emailBuilder.richText.underline", "Underline")} active={active.underline} onAction={() => exec("underline")}>
+                <Underline className="h-3.5 w-3.5" />
+            </ToolbarButton>
+            <span className="mx-0.5 h-5 w-px bg-border" />
+            <ToolbarButton label={tr("emailBuilder.richText.link", "Add link")} onAction={addLink}>
+                <Link className="h-3.5 w-3.5" />
+            </ToolbarButton>
+            {allowLists && (
+                <>
+                    <ToolbarButton label={tr("emailBuilder.richText.bulletList", "Bulleted list")} onAction={() => exec("insertUnorderedList")}>
+                        <List className="h-3.5 w-3.5" />
+                    </ToolbarButton>
+                    <ToolbarButton label={tr("emailBuilder.richText.numberedList", "Numbered list")} onAction={() => exec("insertOrderedList")}>
+                        <ListOrdered className="h-3.5 w-3.5" />
+                    </ToolbarButton>
+                    <span className="mx-0.5 h-5 w-px bg-border" />
+                </>
+            )}
+            <ToolbarButton label={tr("emailBuilder.richText.clear", "Clear formatting")} onAction={() => exec("removeFormat")}>
+                <RemoveFormatting className="h-3.5 w-3.5" />
+            </ToolbarButton>
+        </div>
     );
 }
 
@@ -150,17 +299,13 @@ function renderBlock(
                     <EditableContent
                         value={block.content}
                         editing
-                        plainText
+                        allowLists={false}
                         onCommit={(v) => onEditContent!(v)}
                         style={headingStyle}
                     />
                 );
             }
-            return (
-                <Tag style={headingStyle}>
-                    {block.content}
-                </Tag>
-            );
+            return <Tag style={headingStyle} dangerouslySetInnerHTML={{ __html: block.content }} />;
         }
 
         case "image":
@@ -457,10 +602,30 @@ function renderBlock(
                 </div>
             );
 
-        case "html":
-            return <div dangerouslySetInnerHTML={{ __html: block.content }} />;
+        case "html": {
+            const inner = (block.css && block.css.trim() ? `<style>${block.css}</style>` : "") + block.content;
+            return <ShadowHtml html={inner} />;
+        }
 
         default:
             return <div>Unknown block</div>;
     }
+}
+
+/**
+ * Renders raw HTML (+ optional CSS) inside a shadow root so a Custom HTML block's
+ * styles stay isolated — they can't leak into the editor chrome, and the editor's
+ * styles can't override them. Mirrors how the exported email scopes nothing, but
+ * keeps the live canvas safe to edit.
+ */
+function ShadowHtml({ html }: { html: string }) {
+    const hostRef = useRef<HTMLDivElement>(null);
+    const shadowRef = useRef<ShadowRoot | null>(null);
+    useEffect(() => {
+        const host = hostRef.current;
+        if (!host) return;
+        if (!shadowRef.current) shadowRef.current = host.attachShadow({ mode: "open" });
+        shadowRef.current.innerHTML = html;
+    }, [html]);
+    return <div ref={hostRef} />;
 }

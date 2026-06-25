@@ -1,5 +1,7 @@
+import { useState } from "react";
 import { EmailBlock, Padding, TextBlock, HeadingBlock, ImageBlock, ButtonBlock, DividerBlock, SpacerBlock, SocialBlock, HtmlBlock, LogoBlock, FooterBlock, VideoBlock, QuoteBlock, ColumnsBlock, ColumnConfig, EmailSettings, MergeFieldGroup } from "../types";
-import { Input, Label, Button, Slider, ScrollArea, Separator, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Popover, PopoverContent, PopoverTrigger } from "../ui/primitives";
+import { Input, Label, Button, Slider, ScrollArea, Separator, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Popover, PopoverContent, PopoverTrigger, Tabs, TabsList, TabsTrigger, TabsContent } from "../ui/primitives";
+import { CodeEditor } from "../ui/CodeEditor";
 import { useTr } from "../i18n";
 import {
     AlignLeft,
@@ -311,16 +313,34 @@ function SocialProps({ block, update }: { block: SocialBlock; update: (u: Partia
 
 function HtmlProps({ block, update }: { block: HtmlBlock; update: (u: Partial<HtmlBlock>) => void }) {
     const tr = useTr();
+    const [tab, setTab] = useState<"html" | "css">("html");
     return (
-        <div className="space-y-3">
-            <div>
-                <Label className="text-xs">{tr("emailBuilder.prop.htmlCode", "HTML Code")}</Label>
-                <textarea
-                    className="w-full h-40 mt-1 text-xs p-2 border rounded-md bg-background resize-none font-mono"
-                    value={block.content}
-                    onChange={(e) => update({ content: e.target.value })}
-                />
-            </div>
+        <div className="space-y-2">
+            <Tabs value={tab} onValueChange={(v) => setTab(v as "html" | "css")}>
+                <TabsList className="w-full">
+                    <TabsTrigger value="html" className="flex-1">{tr("emailBuilder.prop.htmlTab", "HTML")}</TabsTrigger>
+                    <TabsTrigger value="css" className="flex-1">{tr("emailBuilder.prop.cssTab", "CSS")}</TabsTrigger>
+                </TabsList>
+                <TabsContent value="html" className="mt-2">
+                    <CodeEditor
+                        language="html"
+                        value={block.content}
+                        onChange={(content) => update({ content })}
+                        ariaLabel={tr("emailBuilder.prop.htmlCode", "HTML Code")}
+                    />
+                </TabsContent>
+                <TabsContent value="css" className="mt-2">
+                    <CodeEditor
+                        language="css"
+                        value={block.css ?? ""}
+                        onChange={(css) => update({ css })}
+                        ariaLabel={tr("emailBuilder.prop.cssCode", "CSS")}
+                    />
+                    <p className="mt-1.5 text-[10px] leading-snug text-muted-foreground">
+                        {tr("emailBuilder.prop.cssHint", "Added to the email <head>. CSS support varies by email client — inline styles are safest.")}
+                    </p>
+                </TabsContent>
+            </Tabs>
         </div>
     );
 }
@@ -555,6 +575,20 @@ export function EmailSettingsPanel({
                     <ColorInput label={tr("emailBuilder.settingsPanel.contentBackground", "Content background")} value={settings.contentBackgroundColor} onChange={(v) => onUpdate({ contentBackgroundColor: v })} />
                     <ColorInput label={tr("emailBuilder.settingsPanel.textColor", "Text color")} value={settings.textColor} onChange={(v) => onUpdate({ textColor: v })} />
                     <ColorInput label={tr("emailBuilder.settingsPanel.linkColor", "Link color")} value={settings.linkColor} onChange={(v) => onUpdate({ linkColor: v })} />
+                    <Separator />
+                    <div>
+                        <Label className="text-xs">{tr("emailBuilder.settingsPanel.customCss", "Custom CSS")}</Label>
+                        <p className="text-[10px] leading-snug text-muted-foreground mt-0.5 mb-1.5">
+                            {tr("emailBuilder.settingsPanel.customCssHint", "Injected into the email <head>; applies to the whole email. Support varies by client — inline styles are safest.")}
+                        </p>
+                        <CodeEditor
+                            language="css"
+                            value={settings.customCss ?? ""}
+                            onChange={(customCss) => onUpdate({ customCss })}
+                            height={180}
+                            ariaLabel={tr("emailBuilder.settingsPanel.customCss", "Custom CSS")}
+                        />
+                    </div>
                 </div>
             </ScrollArea>
         </div>
