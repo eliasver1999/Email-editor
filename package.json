@@ -1,17 +1,17 @@
 {
-  "name": "@eventora/email-builder",
+  "name": "email-block-builder",
   "version": "0.1.0",
   "description": "Framework-agnostic drag-and-drop email builder for React. Themable, localizable, exports email-safe HTML.",
   "type": "module",
   "license": "MIT",
-  "author": "Eventora",
+  "author": "Ilias Verginis",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/eventora/email-builder.git"
+    "url": "git+https://github.com/iliasverginis/email-block-builder.git"
   },
-  "homepage": "https://github.com/eventora/email-builder#readme",
+  "homepage": "https://github.com/iliasverginis/email-block-builder#readme",
   "bugs": {
-    "url": "https://github.com/eventora/email-builder/issues"
+    "url": "https://github.com/iliasverginis/email-block-builder/issues"
   },
   "keywords": [
     "email",

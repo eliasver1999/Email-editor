@@ -727,7 +727,7 @@ export function EmailBuilder({ initialDocument, onChange, onSave, onBack, fieldG
                                 <div className="px-4 py-3 space-y-1.5 text-sm">
                                     <div className="flex items-center gap-2">
                                         <span className="text-xs text-muted-foreground w-12">From:</span>
-                                        <span className="text-xs font-medium">Your Event &lt;noreply@eventora.com&gt;</span>
+                                        <span className="text-xs font-medium">Your Event &lt;noreply@example.com&gt;</span>
                                     </div>
                                     <div className="flex items-center gap-2">
                                         <span className="text-xs text-muted-foreground w-12">To:</span>

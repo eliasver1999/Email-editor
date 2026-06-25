@@ -18,7 +18,7 @@ columns.columns[0].blocks = [createBlock("heading"), createBlock("text")];
 columns.columns[1].blocks = [createBlock("image")];
 
 const doc = {
-    settings: { ...DEFAULT_SETTINGS, preheaderText: "A sample email from @eventora/email-builder" },
+    settings: { ...DEFAULT_SETTINGS, preheaderText: "A sample email from email-block-builder" },
     blocks: [
         createBlock("logo"),
         createBlock("heading"),

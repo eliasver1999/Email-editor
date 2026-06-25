@@ -37,4 +37,4 @@ Initial public release.
 - No dark-mode handling or plain-text / multipart alternative yet.
 - Generated HTML has not been validated across the full email-client matrix — smoke-test your own templates (see the README).
 
-[0.1.0]: https://github.com/eventora/email-builder/releases/tag/v0.1.0
+[0.1.0]: https://github.com/iliasverginis/email-block-builder/releases/tag/v0.1.0

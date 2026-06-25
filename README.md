@@ -1,4 +1,4 @@
-# @eventora/email-builder
+# email-block-builder
 
 A framework-agnostic, drag-and-drop **email builder** for React. Compose emails from blocks (text, image, button, columns, social, …), preview them live, and export **email-safe, table-based HTML** that renders across clients (including Outlook).
 
@@ -12,7 +12,7 @@ A framework-agnostic, drag-and-drop **email builder** for React. Compose emails 
 ## Install
 
 ```bash
-npm install @eventora/email-builder
+npm install email-block-builder
 ```
 
 Peer dependencies (you likely already have most):
@@ -27,8 +27,8 @@ npm install @monaco-editor/react
 
 ```tsx
 import { useState } from "react";
-import { EmailBuilder, type EmailDocument } from "@eventora/email-builder";
-import "@eventora/email-builder/styles.css"; // once, anywhere
+import { EmailBuilder, type EmailDocument } from "email-block-builder";
+import "email-block-builder/styles.css"; // once, anywhere
 
 export function MyEditor() {
   const [doc, setDoc] = useState<EmailDocument>();
@@ -53,7 +53,7 @@ That's it — the editor is fully styled (it renders inside a `.email-builder` r
 Render a saved design to HTML anywhere (server or client) — no React tree needed:
 
 ```ts
-import { renderToHtml, type EmailDocument } from "@eventora/email-builder";
+import { renderToHtml, type EmailDocument } from "email-block-builder";
 
 const html = renderToHtml(savedDocument as EmailDocument);
 ```
@@ -129,7 +129,7 @@ The editor ships English text by default. Pass a `t(key)` function to translate 
 Register your own block types for the email output without forking — provide a `BlockRenderer` via `defineBlock` and pass it to `renderToHtml`:
 
 ```tsx
-import { defineBlock, renderToHtml, type CustomBlock } from "@eventora/email-builder";
+import { defineBlock, renderToHtml, type CustomBlock } from "email-block-builder";
 
 interface ProductCardBlock extends CustomBlock {
   type: "product-card";
@@ -169,4 +169,4 @@ This is an early **0.x** release; the API may change between minor versions.
 
 ## License
 
-MIT © Eventora
+MIT © Ilias Verginis

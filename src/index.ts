@@ -1,5 +1,5 @@
 // Email Builder — Public API
-// Consumer should import styles: import "@eventora/email-builder/styles.css"
+// Consumer should import styles: import "email-block-builder/styles.css"
 export { EmailBuilder } from "./EmailBuilder";
 export { EmailBuilderToaster } from "./ui/Toaster";
 export { renderToHtml, renderEmailHtml, exportToJson, importFromJson, defineBlock } from "./renderer/toHtml";
