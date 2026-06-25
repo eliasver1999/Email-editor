@@ -201,6 +201,7 @@ export function createLogoBlock(): LogoBlock {
         alt: "Logo",
         href: "",
         width: 150,
+        border: { ...DEFAULT_BORDER },
         align: "center",
         padding: { top: 20, right: 20, bottom: 20, left: 20 },
         backgroundColor: "transparent",

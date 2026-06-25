@@ -427,6 +427,7 @@ function HtmlProps({ block, update }: { block: HtmlBlock; update: (u: Partial<Ht
 
 function LogoProps({ block, update }: { block: LogoBlock; update: (u: Partial<LogoBlock>) => void }) {
     const tr = useTr();
+    const border = block.border ?? DEFAULT_BORDER;
     return (
         <div className="space-y-3">
             <div>
@@ -443,6 +444,11 @@ function LogoProps({ block, update }: { block: LogoBlock; update: (u: Partial<Lo
             </div>
             <SliderField label={tr("emailBuilder.prop.width", "Width")} value={block.width} min={50} max={400} onChange={(v) => update({ width: v })} suffix="px" />
             <AlignSelect value={block.align} onChange={(v) => update({ align: v })} />
+            <SliderField label={tr("emailBuilder.prop.borderWidth", "Border Width")} value={border.width} min={0} max={10} onChange={(v) => update({ border: { ...border, width: v } })} suffix="px" />
+            {border.width > 0 && (
+                <ColorInput label={tr("emailBuilder.prop.borderColor", "Border Color")} value={border.color} onChange={(v) => update({ border: { ...border, color: v } })} />
+            )}
+            <SliderField label={tr("emailBuilder.prop.borderRadius", "Border Radius")} value={border.radius} min={0} max={50} onChange={(v) => update({ border: { ...border, radius: v } })} suffix="px" />
         </div>
     );
 }

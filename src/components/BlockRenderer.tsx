@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { EmailBlock, ImageBlock, Padding } from "../types";
+import { EmailBlock, Padding } from "../types";
 import {
     Type,
     Heading,
@@ -329,7 +329,7 @@ function renderBlock(
                             }}
                         />
                     ) : isEditing ? (
-                        <ImageUploadPlaceholder block={block} />
+                        <ImageUploadPlaceholder blockId={block.id} />
                     ) : (
                         <div
                             style={{
@@ -468,9 +468,17 @@ function renderBlock(
                             <img
                                 src={block.src}
                                 alt={block.alt}
-                                style={{ width: `${block.width}px`, maxWidth: "100%", display: "inline-block" }}
+                                style={{
+                                    width: `${block.width}px`,
+                                    maxWidth: "100%",
+                                    display: "inline-block",
+                                    border: block.border && block.border.width > 0 ? `${block.border.width}px ${block.border.style} ${block.border.color}` : undefined,
+                                    borderRadius: block.border && block.border.radius > 0 ? block.border.radius : undefined,
+                                }}
                             />
                         </a>
+                    ) : isEditing ? (
+                        <ImageUploadPlaceholder blockId={block.id} />
                     ) : (
                         <div
                             style={{
@@ -642,7 +650,7 @@ function ShadowHtml({ html }: { html: string }) {
  * handler is available it offers an inline "Add image" button that opens the file
  * picker, uploads, and writes the returned URL back to the block.
  */
-function ImageUploadPlaceholder({ block }: { block: ImageBlock }) {
+function ImageUploadPlaceholder({ blockId }: { blockId: string }) {
     const tr = useTr();
     const onImageUpload = useImageUpload();
     const updateBlock = useUpdateBlock();
@@ -654,7 +662,7 @@ function ImageUploadPlaceholder({ block }: { block: ImageBlock }) {
         setUploading(true);
         try {
             const url = await onImageUpload(file);
-            if (url) updateBlock?.(block.id, { src: url });
+            if (url) updateBlock?.(blockId, { src: url });
         } catch (err) {
             toast({
                 title: tr("emailBuilder.prop.uploadFailed", "Image upload failed"),

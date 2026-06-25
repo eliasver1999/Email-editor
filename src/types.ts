@@ -140,6 +140,7 @@ export interface LogoBlock extends BaseBlock {
     alt: string;
     href: string;
     width: number; // px
+    border: BorderStyle;
     align: "left" | "center" | "right";
 }
 
