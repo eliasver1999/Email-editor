@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { EmailBlock, Padding } from "../types";
+import { EmailBlock, ImageBlock, Padding } from "../types";
 import {
     Type,
     Heading,
@@ -23,9 +23,14 @@ import {
     List,
     ListOrdered,
     RemoveFormatting,
+    Upload,
+    Loader2,
 } from "lucide-react";
 import { cn } from "../ui/utils";
 import { useTr } from "../i18n";
+import { useImageUpload } from "../upload";
+import { useUpdateBlock } from "../editor-context";
+import { toast } from "../ui/hooks";
 
 function paddingStyle(p: Padding): React.CSSProperties {
     return { padding: `${p.top}px ${p.right}px ${p.bottom}px ${p.left}px` };
@@ -323,6 +328,8 @@ function renderBlock(
                                 display: "inline-block",
                             }}
                         />
+                    ) : isEditing ? (
+                        <ImageUploadPlaceholder block={block} />
                     ) : (
                         <div
                             style={{
@@ -628,4 +635,77 @@ function ShadowHtml({ html }: { html: string }) {
         shadowRef.current.innerHTML = html;
     }, [html]);
     return <div ref={hostRef} />;
+}
+
+/**
+ * Empty image-block placeholder shown while editing. When an `onImageUpload`
+ * handler is available it offers an inline "Add image" button that opens the file
+ * picker, uploads, and writes the returned URL back to the block.
+ */
+function ImageUploadPlaceholder({ block }: { block: ImageBlock }) {
+    const tr = useTr();
+    const onImageUpload = useImageUpload();
+    const updateBlock = useUpdateBlock();
+    const inputRef = useRef<HTMLInputElement>(null);
+    const [uploading, setUploading] = useState(false);
+
+    const handleFile = async (file: File | undefined) => {
+        if (!file || !onImageUpload) return;
+        setUploading(true);
+        try {
+            const url = await onImageUpload(file);
+            if (url) updateBlock?.(block.id, { src: url });
+        } catch (err) {
+            toast({
+                title: tr("emailBuilder.prop.uploadFailed", "Image upload failed"),
+                description: err instanceof Error ? err.message : undefined,
+                variant: "destructive",
+            });
+        } finally {
+            setUploading(false);
+        }
+    };
+
+    return (
+        <div
+            style={{
+                width: "100%",
+                minHeight: "150px",
+                backgroundColor: "#f3f4f6",
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: "10px",
+                borderRadius: "8px",
+                border: "2px dashed #d1d5db",
+                padding: "16px",
+            }}
+        >
+            <Image className="h-8 w-8 text-gray-400" />
+            {onImageUpload && (
+                <>
+                    <input
+                        ref={inputRef}
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={(e) => {
+                            handleFile(e.target.files?.[0]);
+                            e.target.value = "";
+                        }}
+                    />
+                    <button
+                        type="button"
+                        disabled={uploading}
+                        onClick={(e) => { e.stopPropagation(); inputRef.current?.click(); }}
+                        className="inline-flex items-center gap-1.5 rounded-md border border-border bg-card px-3 py-1.5 text-xs font-medium hover:bg-accent hover:text-accent-foreground"
+                    >
+                        {uploading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Upload className="h-3.5 w-3.5" />}
+                        {tr("emailBuilder.prop.addImage", "Add image")}
+                    </button>
+                </>
+            )}
+        </div>
+    );
 }

@@ -66,6 +66,7 @@ import { PropertyPanel, EmailSettingsPanel } from "./components/PropertyPanel";
 import { exportToJson, importFromJson, renderEmailHtml } from "./renderer/toHtml";
 import { BuilderI18nContext, makeTr } from "./i18n";
 import { ImageUploadContext, type ImageUploadFn } from "./upload";
+import { UpdateBlockContext } from "./editor-context";
 
 interface EmailBuilderProps {
     /** Initial document to load */
@@ -597,6 +598,7 @@ export function EmailBuilder({ initialDocument, onChange, onSave, onBack, fieldG
     return (
         <BuilderI18nContext.Provider value={t}>
         <ImageUploadContext.Provider value={onImageUpload}>
+        <UpdateBlockContext.Provider value={updateBlock}>
         <div className="email-builder">
         <DndContext sensors={sensors} collisionDetection={rectIntersection} onDragStart={handleDragStart} onDragEnd={handleDragEnd} onDragCancel={handleDragCancel}>
             <div className="flex flex-col h-[calc(100vh-140px)]">
@@ -811,6 +813,7 @@ export function EmailBuilder({ initialDocument, onChange, onSave, onBack, fieldG
             </DragOverlay>
         </DndContext>
         </div>
+        </UpdateBlockContext.Provider>
         </ImageUploadContext.Provider>
         </BuilderI18nContext.Provider>
     );
