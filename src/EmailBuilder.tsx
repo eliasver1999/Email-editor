@@ -60,7 +60,7 @@ function DragPreview({ kind, label }: { kind: "catalog" | "reorder"; label: stri
         </div>
     );
 }
-import { createBlock } from "./defaults";
+import { createBlock, createStarterDocument } from "./defaults";
 import { Canvas } from "./components/Canvas";
 import { BlockSidebar } from "./components/BlockSidebar";
 import { PropertyPanel, EmailSettingsPanel } from "./components/PropertyPanel";
@@ -118,8 +118,10 @@ export function EmailBuilder({ initialDocument, onChange, onSave, onBack, fieldG
     const tr = useMemo(() => makeTr(t), [t]);
 
     // Document state
+    // No document provided → start from a sensible default layout (not a blank
+    // canvas). An explicit document, even an empty one, is honored as-is.
     const [document, setDocument] = useState<EmailDocument>(
-        initialDocument || { settings: { ...DEFAULT_SETTINGS }, blocks: [] }
+        initialDocument ?? createStarterDocument()
     );
     const [selectedBlockId, setSelectedBlockId] = useState<string | null>(null);
     const [viewMode, setViewMode] = useState<"edit" | "preview" | "code">("edit");

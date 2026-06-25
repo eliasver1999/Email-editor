@@ -15,7 +15,9 @@ Initial public release.
 - Inline WYSIWYG rich-text toolbar (bold / italic / underline / link / lists) for text and footer blocks, and a reduced toolbar (no lists) for headings.
 - Syntax-highlighted HTML + CSS editor for the Custom HTML block and a document-level Custom CSS field (Monaco — an optional peer dependency — with a plain-textarea fallback).
 - Optional image upload via the `onImageUpload` prop on image / logo / thumbnail fields; URL-only when omitted.
-- Desktop / mobile preview, JSON import/export, undo/redo (50 steps), keyboard shortcuts, theming via CSS variables, and localization via a `t` prop.
+- Desktop / mobile preview, undo/redo (50 steps), keyboard shortcuts, theming via CSS variables, and localization via a `t` prop.
+- Mounts with a **default starter layout** when no `initialDocument` is given (pass an explicit document — even empty — to start blank).
+- Toolbar tidied: Import / Export / Download HTML moved into a **"⋯ More"** menu, alongside **Copy / Paste design** (clipboard) for duplicating one template into another.
 
 ### Rendering
 

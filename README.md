@@ -116,7 +116,7 @@ The editor ships English text by default. Pass a `t(key)` function to translate 
 
 | Prop | Type | Description |
 | --- | --- | --- |
-| `initialDocument` | `EmailDocument` | Design to load (omit for a blank canvas). |
+| `initialDocument` | `EmailDocument` | Design to load. Omit to start from a default starter layout; pass `{ settings, blocks: [] }` for a blank canvas. |
 | `onSave` | `(doc, html) => void` | Called on save with the JSON design **and** rendered HTML. |
 | `onBack` | `() => void` | Optional back button handler. |
 | `fieldGroups` | `MergeFieldGroup[]` | Merge-tag groups available to insert. |

@@ -7,6 +7,7 @@ import {
     createButtonBlock,
     createImageBlock,
     createHtmlBlock,
+    createStarterDocument,
 } from "../defaults";
 import { DEFAULT_SETTINGS, BLOCK_CATALOG } from "../types";
 import type { EmailBlock, EmailDocument, EmailSettings, CustomBlock, AnyBlock } from "../types";
@@ -36,6 +37,14 @@ describe("renderToHtml", () => {
         expect(html).toContain("<!DOCTYPE html>");
         expect(html).toContain('role="presentation"'); // layout tables, not data tables
         expect(html).toMatch(/<body[^>]*>/);
+    });
+
+    it("createStarterDocument yields a non-empty, renderable starter layout", () => {
+        const doc = createStarterDocument();
+        expect(doc.blocks.length).toBeGreaterThan(0);
+        const html = renderToHtml(doc);
+        expect(html).toContain("<!DOCTYPE html>");
+        expect(html).toContain("Your headline goes here");
     });
 
     describe("responsive", () => {

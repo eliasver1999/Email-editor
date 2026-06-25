@@ -15,8 +15,10 @@ import {
     VideoBlock,
     QuoteBlock,
     BlockType,
+    EmailDocument,
     DEFAULT_PADDING,
     DEFAULT_BORDER,
+    DEFAULT_SETTINGS,
 } from "./types";
 
 // Factory functions to create blocks with defaults
@@ -38,6 +40,26 @@ export function createBlock(type: BlockType): EmailBlock {
         quote: createQuoteBlock,
     };
     return factories[type]();
+}
+
+/**
+ * The starter layout shown when `<EmailBuilder>` mounts without an
+ * `initialDocument` — a simple, editable skeleton (logo → headline → body →
+ * call-to-action → divider → footer) so users don't face a blank canvas. Pass an
+ * explicit document (even `{ settings, blocks: [] }`) to start blank instead.
+ */
+export function createStarterDocument(): EmailDocument {
+    return {
+        settings: { ...DEFAULT_SETTINGS },
+        blocks: [
+            createLogoBlock(),
+            { ...createHeadingBlock(), content: "Your headline goes here" },
+            { ...createTextBlock(), content: "<p>Write a short, friendly message to your readers here. You can format text, add links, images, buttons, and more.</p>" },
+            createButtonBlock(),
+            createDividerBlock(),
+            createFooterBlock(),
+        ],
+    };
 }
 
 export function createTextBlock(): TextBlock {
