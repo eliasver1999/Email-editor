@@ -277,7 +277,18 @@ function ImageProps({ block, update }: { block: ImageBlock; update: (u: Partial<
                 <Label className="text-xs">{tr("emailBuilder.prop.linkUrl", "Link URL")}</Label>
                 <Input className="h-8 mt-1 text-xs" placeholder="https://..." value={block.href} onChange={(e) => update({ href: e.target.value })} />
             </div>
+            <div className="flex items-center gap-2">
+                <input type="checkbox" id="img-full-width" checked={block.width === "auto"} onChange={(e) => update({ width: e.target.checked ? "auto" : 100 })} className="rounded" />
+                <Label htmlFor="img-full-width" className="text-xs">{tr("emailBuilder.prop.fullWidth", "Full width")}</Label>
+            </div>
+            {block.width !== "auto" && (
+                <SliderField label={tr("emailBuilder.prop.width", "Width")} value={block.width} min={10} max={100} onChange={(v) => update({ width: v })} suffix="%" />
+            )}
             <AlignSelect value={block.align} onChange={(v) => update({ align: v })} />
+            <SliderField label={tr("emailBuilder.prop.borderWidth", "Border Width")} value={block.border.width} min={0} max={10} onChange={(v) => update({ border: { ...block.border, width: v } })} suffix="px" />
+            {block.border.width > 0 && (
+                <ColorInput label={tr("emailBuilder.prop.borderColor", "Border Color")} value={block.border.color} onChange={(v) => update({ border: { ...block.border, color: v } })} />
+            )}
             <SliderField label={tr("emailBuilder.prop.borderRadius", "Border Radius")} value={block.border.radius} min={0} max={50} onChange={(v) => update({ border: { ...block.border, radius: v } })} suffix="px" />
         </div>
     );
