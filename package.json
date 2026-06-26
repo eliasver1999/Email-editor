@@ -1,17 +1,17 @@
 {
   "name": "email-block-builder",
-  "version": "0.3.1",
+  "version": "0.4.0",
   "description": "Framework-agnostic drag-and-drop email builder for React. Themable, localizable, exports email-safe HTML.",
   "type": "module",
   "license": "MIT",
   "author": "Ilias Verginis",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/iliasverginis/email-block-builder.git"
+    "url": "git+https://github.com/eliasver1999/Email-editor.git"
   },
-  "homepage": "https://github.com/iliasverginis/email-block-builder#readme",
+  "homepage": "https://github.com/eliasver1999/Email-editor#readme",
   "bugs": {
-    "url": "https://github.com/iliasverginis/email-block-builder/issues"
+    "url": "https://github.com/eliasver1999/Email-editor/issues"
   },
   "keywords": [
     "email",

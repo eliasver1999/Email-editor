@@ -79,4 +79,9 @@ Initial public release.
 - No dark-mode handling or plain-text / multipart alternative yet.
 - Generated HTML has not been validated across the full email-client matrix — smoke-test your own templates (see the README).
 
-[0.1.0]: https://github.com/iliasverginis/email-block-builder/releases/tag/v0.1.0
+[Unreleased]: https://github.com/eliasver1999/Email-editor/compare/v0.4.0...HEAD
+[0.4.0]: https://github.com/eliasver1999/Email-editor/compare/v0.3.1...v0.4.0
+[0.3.1]: https://github.com/eliasver1999/Email-editor/compare/v0.3.0...v0.3.1
+[0.3.0]: https://github.com/eliasver1999/Email-editor/compare/v0.2.0...v0.3.0
+[0.2.0]: https://github.com/eliasver1999/Email-editor/compare/v0.1.0...v0.2.0
+[0.1.0]: https://github.com/eliasver1999/Email-editor/releases/tag/v0.1.0
