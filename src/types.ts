@@ -206,6 +206,17 @@ export interface EmailDocument {
     blocks: EmailBlock[];
 }
 
+/**
+ * A language variant the editor can hold a separate design for. Pass a list of
+ * these as `<EmailBuilder locales={…} />` to edit one template per language and
+ * copy a design across all languages. `code` is your own locale key (e.g. "en",
+ * "el", "fr"); `label` is what's shown in the language switcher.
+ */
+export interface EmailLocale {
+    code: string;
+    label: string;
+}
+
 export interface EmailSettings {
     /** Max width of the email body */
     contentWidth: number;

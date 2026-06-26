@@ -112,16 +112,52 @@ The editor ships English text by default. Pass a `t(key)` function to translate 
 <EmailBuilder t={(key) => myI18n.translate(key)} />
 ```
 
+> Note: `t` translates the **editor chrome**. To translate the **email content** itself, use multi-language mode below — each language gets its own design.
+
+## Multiple languages
+
+Pass a `locales` list to keep a **separate design per language**. A switcher appears in the toolbar, and each language is a fully independent `EmailDocument` — different blocks, layout, and content are all allowed. A **"Copy to all languages"** action (in the ⋯ More menu) clones the active language's design onto the others, so translators start from an identical layout.
+
+```tsx
+<EmailBuilder
+  locales={[
+    { code: "en", label: "English" },
+    { code: "el", label: "Ελληνικά" },
+    { code: "fr", label: "Français" },
+  ]}
+  defaultLocale="en"
+  initialDocuments={{ en: savedEn, el: savedEl }}   // optional; missing langs start from the starter
+  onSave={(doc, html, meta) => {
+    // doc/html are the active language. meta has them all:
+    if (meta) {
+      for (const [code, document] of Object.entries(meta.documents)) {
+        save(code, document, meta.htmls[code]);       // persist each language's design + HTML
+      }
+    }
+  }}
+/>
+```
+
+`onSave`'s third argument (`MultiLocaleSaveMeta`) carries `{ locale, documents, htmls }` — every language's design and rendered HTML, keyed by `code` — so you can persist all variants in one save.
+
+> Editing history (undo/redo) is per-language and resets when you switch languages.
+
 ## `<EmailBuilder>` props
 
 | Prop | Type | Description |
 | --- | --- | --- |
 | `initialDocument` | `EmailDocument` | Design to load. Omit to start from a default starter layout; pass `{ settings, blocks: [] }` for a blank canvas. |
-| `onSave` | `(doc, html) => void` | Called on save with the JSON design **and** rendered HTML. |
+| `onSave` | `(doc, html, meta?) => void` | Called on save with the JSON design **and** rendered HTML. With `locales`, the third arg is a `MultiLocaleSaveMeta` carrying every language's design + HTML. |
 | `onBack` | `() => void` | Optional back button handler. |
+| `locales` | `EmailLocale[]` | Enable multi-language mode: edit a separate design per language with a toolbar switcher. See [Multiple languages](#multiple-languages). |
+| `initialDocuments` | `Record<string, EmailDocument>` | Initial design per language, keyed by locale `code`. Missing languages start from the starter layout. |
+| `defaultLocale` | `string` | Which language is selected on load (defaults to the first in `locales`). |
 | `fieldGroups` | `MergeFieldGroup[]` | Merge-tag groups available to insert. |
 | `previewSubstitute` | `(html) => string` | Resolve `{{tokens}}` to sample values in the live preview. |
 | `onImageUpload` | `(file) => Promise<string>` | Upload picked images and return a hosted URL; adds an upload button to image/logo/thumbnail fields. Omit for URL-only. |
+| `canManageLocks` | `boolean` | Full editor (default `true`). `false` = restricted editor: locked blocks are read-only. |
+| `customBlocks` | `BlockDefinition[]` | Custom block types from `defineBlock` (see [Custom blocks](#custom-blocks-plugin-api)). |
+| `canvasShadow` | `boolean` | Draw a drop shadow around the canvas in edit mode (off by default). |
 | `t` | `(key) => string` | Translation function for the editor UI. |
 
 ## Custom blocks (plugin API)

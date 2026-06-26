@@ -9,6 +9,7 @@ include breaking changes.
 
 ### Added
 
+- **Multi-language templates**: pass `<EmailBuilder locales={[{code,label}]} />` to edit a separate design per language with a toolbar switcher. Languages are fully independent designs; a **"Copy to all languages"** action (⋯ More menu) clones the active design onto the others. `onSave` gains an optional third arg (`MultiLocaleSaveMeta`) with every language's document + rendered HTML. Seed with `initialDocuments` / `defaultLocale`. Single-language usage is unchanged.
 - **Editable custom blocks**: custom blocks registered with `defineBlock` and passed to `<EmailBuilder customBlocks={[…]} />` are now first-class in the editor — they appear in the block sidebar, can be dragged/double-clicked onto the canvas, render via an optional `Canvas` component, and edit via an optional `Editor` component in the property panel. They still export through your `toHtml`. (Render-only support shipped earlier; this completes the plugin API.)
 - **Drag-and-drop image upload**: drop an image file onto an image/logo field, or onto an empty image/logo block on the canvas, to upload it (via `onImageUpload`).
 - **Lockable components**: `<EmailBuilder canManageLocks>` (default `true`). Restricted editors (`false`) can't edit/move/delete locked blocks; locked blocks show a background-contrasting lock badge.

@@ -30,12 +30,15 @@ import {
     ClipboardPaste,
     Lock,
     Unlock,
+    Languages,
+    Check,
+    CopyPlus,
 } from "lucide-react";
 import { cn } from "./ui/utils";
 import { useToast, useUnsavedChanges } from "./ui/hooks";
 import { CodeEditor } from "./ui/CodeEditor";
 
-import { EmailBlock, EmailDocument, EmailSettings, BlockType, ColumnsBlock, MergeFieldGroup, DEFAULT_SETTINGS, BLOCK_CATALOG } from "./types";
+import { EmailBlock, EmailDocument, EmailLocale, EmailSettings, BlockType, ColumnsBlock, MergeFieldGroup, DEFAULT_SETTINGS, BLOCK_CATALOG } from "./types";
 
 /** Deep-clone a block with fresh ids for it and every nested column child. */
 function cloneWithNewIds(block: EmailBlock): EmailBlock {
@@ -71,13 +74,38 @@ import { BuilderI18nContext, makeTr } from "./i18n";
 import { ImageUploadContext, type ImageUploadFn } from "./upload";
 import { UpdateBlockContext, LockingContext, CustomBlocksContext } from "./editor-context";
 
-interface EmailBuilderProps {
-    /** Initial document to load */
+/**
+ * Extra payload passed to `onSave` as the third argument when the editor is in
+ * multi-language mode (`locales` provided). Carries every language's design and
+ * rendered HTML so the host can persist all variants in one save.
+ */
+export interface MultiLocaleSaveMeta {
+    /** The language that was active when Save was clicked. */
+    locale: string;
+    /** Each language's current design, keyed by locale `code`. */
+    documents: Record<string, EmailDocument>;
+    /** Each language's rendered email HTML, keyed by locale `code`. */
+    htmls: Record<string, string>;
+}
+
+export interface EmailBuilderProps {
+    /** Initial document to load (single-language). For multi-language, use `initialDocuments`. */
     initialDocument?: EmailDocument;
+    /**
+     * Languages this template has variants for. When provided (non-empty), the
+     * editor shows a language switcher and keeps a separate design per language;
+     * `onSave` then also receives a {@link MultiLocaleSaveMeta} with all of them.
+     * Omit for a single-language template (the default).
+     */
+    locales?: EmailLocale[];
+    /** Initial design per language, keyed by locale `code`. Languages without an entry start from the default starter layout. Multi-language mode only. */
+    initialDocuments?: Record<string, EmailDocument>;
+    /** Which language is selected initially (defaults to the first in `locales`). */
+    defaultLocale?: string;
     /** Called when document changes */
     onChange?: (doc: EmailDocument) => void;
-    /** Called when user clicks save */
-    onSave?: (doc: EmailDocument, html: string) => void;
+    /** Called when user clicks save. In multi-language mode, `meta` carries every language's design + HTML. */
+    onSave?: (doc: EmailDocument, html: string, meta?: MultiLocaleSaveMeta) => void;
     /** Called when user wants to go back */
     onBack?: () => void;
     /** Personalization tokens (e.g. from useTemplateFields) for the insert-field menu. */
@@ -122,6 +150,21 @@ function MoreMenuItem({ icon, label, onClick }: { icon: React.ReactNode; label: 
     );
 }
 
+/** A language option in the toolbar's language switcher. */
+function LocaleMenuItem({ label, active, onSelect }: { label: string; active: boolean; onSelect: () => void }) {
+    const close = usePopoverClose();
+    return (
+        <button
+            type="button"
+            onClick={() => { onSelect(); close(); }}
+            className="flex w-full items-center justify-between gap-2 rounded px-2 py-1.5 text-xs text-left hover:bg-accent hover:text-accent-foreground"
+        >
+            <span>{label}</span>
+            {active && <Check className="h-3.5 w-3.5 shrink-0 text-primary" />}
+        </button>
+    );
+}
+
 /** Find a block by id anywhere in the tree (top level or inside columns). */
 function findBlockDeep(blocks: EmailBlock[], id: string): EmailBlock | undefined {
     for (const b of blocks) {
@@ -136,16 +179,48 @@ function findBlockDeep(blocks: EmailBlock[], id: string): EmailBlock | undefined
     return undefined;
 }
 
-export function EmailBuilder({ initialDocument, onChange, onSave, onBack, fieldGroups, previewSubstitute, onImageUpload, canvasShadow, canManageLocks = true, customBlocks, t }: EmailBuilderProps) {
+/** Structural deep-clone of a document (drops references; keeps ids). */
+function cloneDoc(doc: EmailDocument): EmailDocument {
+    return JSON.parse(JSON.stringify(doc)) as EmailDocument;
+}
+
+export function EmailBuilder({ initialDocument, locales, initialDocuments, defaultLocale, onChange, onSave, onBack, fieldGroups, previewSubstitute, onImageUpload, canvasShadow, canManageLocks = true, customBlocks, t }: EmailBuilderProps) {
     const { toast } = useToast();
     const tr = useMemo(() => makeTr(t), [t]);
+
+    // Multi-language: a non-empty `locales` list turns on per-language designs.
+    const localeList = useMemo(() => locales ?? [], [locales]);
+    const isMultiLocale = localeList.length > 0;
+    const firstLocale = localeList[0]?.code ?? "";
+    // The language currently being edited. Meaningless (but harmless) when single-language.
+    const [activeLocale, setActiveLocale] = useState<string>(
+        () => defaultLocale && localeList.some((l) => l.code === defaultLocale) ? defaultLocale : firstLocale,
+    );
 
     // Document state
     // No document provided → start from a sensible default layout (not a blank
     // canvas). An explicit document, even an empty one, is honored as-is.
-    const [document, setDocument] = useState<EmailDocument>(
-        initialDocument ?? createStarterDocument()
-    );
+    const [document, setDocument] = useState<EmailDocument>(() => {
+        const initialActive = defaultLocale && (localeList.some((l) => l.code === defaultLocale)) ? defaultLocale : firstLocale;
+        if (isMultiLocale) {
+            return initialDocuments?.[initialActive] ?? initialDocument ?? createStarterDocument();
+        }
+        return initialDocument ?? createStarterDocument();
+    });
+
+    // The *other* languages' designs (everything except the active one). The
+    // active language always lives in `document`; on switch we swap between here
+    // and there. Seeded once from `initialDocuments` (a starter for any missing).
+    const [localeDocs, setLocaleDocs] = useState<Record<string, EmailDocument>>(() => {
+        if (!isMultiLocale) return {};
+        const initialActive = defaultLocale && (localeList.some((l) => l.code === defaultLocale)) ? defaultLocale : firstLocale;
+        const map: Record<string, EmailDocument> = {};
+        for (const l of localeList) {
+            if (l.code === initialActive) continue;
+            map[l.code] = initialDocuments?.[l.code] ?? createStarterDocument();
+        }
+        return map;
+    });
     const [selectedBlockId, setSelectedBlockId] = useState<string | null>(null);
     const [viewMode, setViewMode] = useState<"edit" | "preview" | "code">("edit");
     const [previewWidth, setPreviewWidth] = useState<"desktop" | "mobile">("desktop");
@@ -525,14 +600,70 @@ export function EmailBuilder({ initialDocument, onChange, onSave, onBack, fieldG
         }
     }, [toast, tr]);
 
+    // --- Languages ---
+
+    // Switch the edited language: stash the active design, load the target's.
+    // History is per-language and resets on switch (undo doesn't cross languages).
+    const switchLocale = useCallback((code: string) => {
+        if (code === activeLocale || !isMultiLocale) return;
+        const incoming = localeDocs[code] ?? createStarterDocument();
+        setLocaleDocs((m) => {
+            const next = { ...m };
+            delete next[code];
+            next[activeLocale] = document; // park the design we're leaving
+            return next;
+        });
+        setDocument(incoming);
+        setActiveLocale(code);
+        setSelectedBlockId(null);
+        setPast([]);
+        setFuture([]);
+        lastCommitRef.current = 0;
+    }, [activeLocale, isMultiLocale, localeDocs, document]);
+
+    // Copy the active language's design onto every other language (overwrites
+    // them), so translators start from an identical layout. Confirms first.
+    const copyToAllLocales = useCallback(() => {
+        if (!isMultiLocale) return;
+        const others = localeList.filter((l) => l.code !== activeLocale);
+        if (others.length === 0) return;
+        const activeLabel = localeList.find((l) => l.code === activeLocale)?.label ?? activeLocale;
+        const ok = window.confirm(
+            tr("emailBuilder.copyToAllConfirm", `Copy the "${activeLabel}" design to all other languages? This replaces their current content.`),
+        );
+        if (!ok) return;
+        setLocaleDocs((m) => {
+            const next = { ...m };
+            for (const l of others) next[l.code] = cloneDoc(document);
+            return next;
+        });
+        setIsDirty(true);
+        toast({ title: tr("emailBuilder.copiedToAll", "Design copied to all languages") });
+    }, [isMultiLocale, localeList, activeLocale, document, tr, toast]);
+
     const handleSave = useCallback(async () => {
         const html = await renderEmailHtml(document, { blocks: customBlocks });
-        onSave?.(document, html);
+        if (isMultiLocale) {
+            // Render every language's design so the host can persist all variants.
+            const documents: Record<string, EmailDocument> = { ...localeDocs, [activeLocale]: document };
+            const htmls: Record<string, string> = {};
+            for (const code of Object.keys(documents)) {
+                htmls[code] = code === activeLocale ? html : await renderEmailHtml(documents[code], { blocks: customBlocks });
+            }
+            onSave?.(document, html, { locale: activeLocale, documents, htmls });
+        } else {
+            onSave?.(document, html);
+        }
         setIsDirty(false);
         toast({ title: "Saved" });
-    }, [document, onSave, toast]);
+    }, [document, onSave, toast, customBlocks, isMultiLocale, localeDocs, activeLocale]);
 
     // --- Computed ---
+
+    const activeLocaleLabel = useMemo(
+        () => localeList.find((l) => l.code === activeLocale)?.label ?? activeLocale,
+        [localeList, activeLocale],
+    );
 
     const selectedBlock = useMemo(() => {
         if (!selectedBlockId) return null;
@@ -689,6 +820,30 @@ export function EmailBuilder({ initialDocument, onChange, onSave, onBack, fieldG
                             </Button>
                         </div>
 
+                        {isMultiLocale && (
+                            <Popover>
+                                <PopoverTrigger asChild>
+                                    <Button variant="outline" size="sm" className="h-7 px-2 gap-1.5 ml-2" title={tr("emailBuilder.language", "Language")}>
+                                        <Languages className="h-3.5 w-3.5" />
+                                        <span className="text-xs font-medium">{activeLocaleLabel}</span>
+                                    </Button>
+                                </PopoverTrigger>
+                                <PopoverContent align="start" className="w-52 p-1">
+                                    <p className="px-2 py-1 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+                                        {tr("emailBuilder.language", "Language")}
+                                    </p>
+                                    {localeList.map((l) => (
+                                        <LocaleMenuItem
+                                            key={l.code}
+                                            label={l.label}
+                                            active={l.code === activeLocale}
+                                            onSelect={() => switchLocale(l.code)}
+                                        />
+                                    ))}
+                                </PopoverContent>
+                            </Popover>
+                        )}
+
                         {viewMode === "preview" && (
                             <div className="flex items-center gap-1 border rounded-md p-0.5 ml-2">
                                 <Button
@@ -727,6 +882,12 @@ export function EmailBuilder({ initialDocument, onChange, onSave, onBack, fieldG
                                 </Button>
                             </PopoverTrigger>
                             <PopoverContent align="end" className="w-56 p-1">
+                                {isMultiLocale && (
+                                    <>
+                                        <MoreMenuItem icon={<CopyPlus className="h-3.5 w-3.5" />} label={tr("emailBuilder.copyToAll", "Copy to all languages")} onClick={copyToAllLocales} />
+                                        <div className="my-1 h-px bg-border" />
+                                    </>
+                                )}
                                 <MoreMenuItem icon={<Copy className="h-3.5 w-3.5" />} label={tr("emailBuilder.copyDesign", "Copy design")} onClick={handleCopyDesign} />
                                 <MoreMenuItem icon={<ClipboardPaste className="h-3.5 w-3.5" />} label={tr("emailBuilder.pasteDesign", "Paste design")} onClick={handlePasteDesign} />
                                 <div className="my-1 h-px bg-border" />

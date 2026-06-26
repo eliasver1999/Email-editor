@@ -48,11 +48,21 @@ function App() {
         <>
             <EmailBuilder
                 initialDocument={doc}
-                onSave={(document, html) => {
+                locales={[
+                    { code: "en", label: "English" },
+                    { code: "el", label: "Ελληνικά" },
+                    { code: "fr", label: "Français" },
+                ]}
+                defaultLocale="en"
+                onSave={(document, html, meta) => {
                     setDoc(document);
                     // Inspect the JSON design + rendered email HTML in the console.
                     console.log("[playground] saved document:", document);
                     console.log("[playground] rendered html:\n", html);
+                    if (meta) {
+                        console.log("[playground] saved languages:", Object.keys(meta.documents).join(", "));
+                        console.log("[playground] per-language html:", meta.htmls);
+                    }
                 }}
                 onBack={() => console.log("[playground] back clicked")}
                 customBlocks={[calloutBlock]}
