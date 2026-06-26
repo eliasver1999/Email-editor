@@ -72,6 +72,12 @@ describe("renderToHtml", () => {
             const html = renderToHtml(makeDoc([legacy as unknown as EmailBlock]));
             expect(html).toContain("display:inline-block;width:100%;box-sizing:border-box;");
         });
+
+        it("keeps the row transparent so the button color doesn't bleed full-width (canvas parity)", () => {
+            const html = renderToHtml(makeDoc([createButtonBlock()])); // backgroundColor #22c55e
+            expect(html).not.toContain("padding:15px 20px 15px 20px;background-color:"); // row <td> has no bg
+            expect(html).toContain("background-color:#22c55e"); // ...but the <a> button is still green
+        });
     });
 
     describe("responsive", () => {

@@ -267,12 +267,16 @@ const BUILTIN_RENDERERS: BlockRenderer[] = [
             // wrapping div positions a sub-100% button (left/center/right).
             const w = resolveButtonWidth(block);
             const widthAttr = w === "auto" ? `display:inline-block;` : `display:inline-block;width:${w}%;box-sizing:border-box;`;
-            return ctx.wrapRow(
+            // For a button, `backgroundColor` is the BUTTON color, not the row's — so
+            // the row stays transparent (matching the editor canvas), otherwise the
+            // button color would bleed across the full content width in the email.
+            return wrapRow(
                 `<div style="text-align:${block.align};">` +
                 `<!--[if mso]><v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="${ctx.escapeHtml(block.href)}" style="height:auto;v-text-anchor:middle;${widthAttr}" arcsize="${Math.round(block.borderRadius / 40 * 100)}%" stroke="f" fillcolor="${block.backgroundColor}"><w:anchorlock/><center><![endif]-->` +
                 `<a href="${ctx.escapeHtml(block.href)}" target="_blank" style="${widthAttr}background-color:${block.backgroundColor};color:${block.color};font-size:${block.fontSize}px;font-family:${block.fontFamily};border-radius:${block.borderRadius}px;padding:12px 28px;text-decoration:none;font-weight:bold;text-align:center;mso-padding-alt:0;">${ctx.escapeHtml(block.text)}</a>` +
                 `<!--[if mso]></center></v:roundrect><![endif]-->` +
-                `</div>`
+                `</div>`,
+                { padding: block.padding, backgroundColor: "transparent" },
             );
         },
     }),

@@ -16,6 +16,10 @@ include breaking changes.
 - **Button width** is now an **auto / percentage** control (10–100%), like Image and Divider — instead of just an on/off "Full Width" toggle. `ButtonBlock.fullWidth` is deprecated in favor of `width: "auto" | number`; existing documents still render (a saved `fullWidth: true` → 100%, `false` → auto).
 - Internal: the email `<head>` and the live canvas now share one `EMAIL_BASE_RESET_CSS` block, so a Custom HTML block renders identically in Edit and Preview.
 
+### Fixed
+
+- **Button row no longer bleeds the button color full-width** in the exported email. The button's row stays transparent (only the button itself is colored), so a button — especially a full-width one — looks the same in Edit and Preview. Previously the renderer painted the whole row with the button color while the canvas didn't.
+
 ## [0.2.0] - 2026-06-26
 
 ### Added
