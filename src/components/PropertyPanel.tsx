@@ -1,9 +1,11 @@
 import { useRef, useState } from "react";
-import { EmailBlock, Padding, TextBlock, HeadingBlock, ImageBlock, ButtonBlock, DividerBlock, SpacerBlock, SocialBlock, HtmlBlock, LogoBlock, FooterBlock, QuoteBlock, ColumnsBlock, ColumnConfig, EmailSettings, MergeFieldGroup, BorderStyle, DEFAULT_BORDER } from "../types";
+import { EmailBlock, CustomBlock, Padding, TextBlock, HeadingBlock, ImageBlock, ButtonBlock, DividerBlock, SpacerBlock, SocialBlock, HtmlBlock, LogoBlock, FooterBlock, QuoteBlock, ColumnsBlock, ColumnConfig, EmailSettings, MergeFieldGroup, BorderStyle, DEFAULT_BORDER } from "../types";
 import { Input, Label, Button, Slider, ScrollArea, Separator, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Popover, PopoverContent, PopoverTrigger, Tabs, TabsList, TabsTrigger, TabsContent } from "../ui/primitives";
 import { CodeEditor } from "../ui/CodeEditor";
 import { useTr } from "../i18n";
 import { useImageUpload } from "../upload";
+import { useCustomBlocks } from "../editor-context";
+import type { BlockDefinition } from "../renderer/toHtml";
 import { toast } from "../ui/hooks";
 import {
     AlignLeft,
@@ -72,6 +74,7 @@ interface PropertyPanelProps {
 
 export function PropertyPanel({ block, onUpdate, onDelete, onDuplicate, onToggleVisibility, onToggleLock, canManageLocks = true, fieldGroups }: PropertyPanelProps) {
     const tr = useTr();
+    const customBlocks = useCustomBlocks();
     if (!block) {
         return (
             <div className="h-full flex items-center justify-center p-4 text-center">
@@ -84,6 +87,7 @@ export function PropertyPanel({ block, onUpdate, onDelete, onDuplicate, onToggle
 
     const update = (updates: Partial<any>) => onUpdate(block.id, updates);
     const readOnly = !!block.locked && !canManageLocks;
+    const customDef = customBlocks.get(block.type);
 
     return (
         <div className="h-full flex flex-col">
@@ -124,18 +128,26 @@ export function PropertyPanel({ block, onUpdate, onDelete, onDuplicate, onToggle
                 ) : (
                 <div className="px-4 pb-4 space-y-4">
                     {/* Type-specific properties */}
-                    {block.type === "text" && <TextProps block={block} update={update} />}
-                    {block.type === "heading" && <HeadingProps block={block} update={update} />}
-                    {block.type === "image" && <ImageProps block={block} update={update} />}
-                    {block.type === "button" && <ButtonProps block={block} update={update} />}
-                    {block.type === "divider" && <DividerProps block={block} update={update} />}
-                    {block.type === "spacer" && <SpacerProps block={block} update={update} />}
-                    {block.type === "social" && <SocialProps block={block} update={update} />}
-                    {block.type === "html" && <HtmlProps block={block} update={update} />}
-                    {block.type === "logo" && <LogoProps block={block} update={update} />}
-                    {block.type === "footer" && <FooterProps block={block} update={update} />}
-                    {block.type === "quote" && <QuoteProps block={block} update={update} />}
-                    {block.type === "columns" && <ColumnsProps block={block} update={update} />}
+                    {customDef ? (
+                        customDef.Editor
+                            ? <customDef.Editor block={block as unknown as CustomBlock} update={update} />
+                            : <p className="text-xs text-muted-foreground">{tr("emailBuilder.prop.noEditor", "This block has no editable properties.")}</p>
+                    ) : (
+                        <>
+                            {block.type === "text" && <TextProps block={block} update={update} />}
+                            {block.type === "heading" && <HeadingProps block={block} update={update} />}
+                            {block.type === "image" && <ImageProps block={block} update={update} />}
+                            {block.type === "button" && <ButtonProps block={block} update={update} />}
+                            {block.type === "divider" && <DividerProps block={block} update={update} />}
+                            {block.type === "spacer" && <SpacerProps block={block} update={update} />}
+                            {block.type === "social" && <SocialProps block={block} update={update} />}
+                            {block.type === "html" && <HtmlProps block={block} update={update} />}
+                            {block.type === "logo" && <LogoProps block={block} update={update} />}
+                            {block.type === "footer" && <FooterProps block={block} update={update} />}
+                            {block.type === "quote" && <QuoteProps block={block} update={update} />}
+                            {block.type === "columns" && <ColumnsProps block={block} update={update} />}
+                        </>
+                    )}
 
                     {/* Personalization — insert merge tags into any text-bearing block. */}
                     {fieldGroups && fieldGroups.length > 0 && "content" in block && (

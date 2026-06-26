@@ -1,5 +1,6 @@
 import { createContext, useContext } from "react";
 import type { EmailBlock } from "./types";
+import type { BlockDefinition } from "./renderer/toHtml";
 
 /**
  * Update a block by id. Provided by EmailBuilder so in-canvas widgets (e.g. the
@@ -23,4 +24,11 @@ export const LockingContext = createContext<boolean>(true);
 
 export function useCanManageLocks(): boolean {
     return useContext(LockingContext);
+}
+
+/** Custom block definitions registered via `<EmailBuilder customBlocks>`, keyed by type. */
+export const CustomBlocksContext = createContext<Map<string, BlockDefinition>>(new Map());
+
+export function useCustomBlocks(): Map<string, BlockDefinition> {
+    return useContext(CustomBlocksContext);
 }

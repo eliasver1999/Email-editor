@@ -1,4 +1,5 @@
 import { useState, useCallback, useMemo, useEffect, useRef } from "react";
+import { nanoid } from "nanoid";
 import {
     DndContext,
     DragEndEvent,
@@ -65,10 +66,10 @@ import { createBlock, createStarterDocument } from "./defaults";
 import { Canvas } from "./components/Canvas";
 import { BlockSidebar } from "./components/BlockSidebar";
 import { PropertyPanel, EmailSettingsPanel } from "./components/PropertyPanel";
-import { exportToJson, importFromJson, renderEmailHtml } from "./renderer/toHtml";
+import { exportToJson, importFromJson, renderEmailHtml, type BlockDefinition } from "./renderer/toHtml";
 import { BuilderI18nContext, makeTr } from "./i18n";
 import { ImageUploadContext, type ImageUploadFn } from "./upload";
-import { UpdateBlockContext, LockingContext } from "./editor-context";
+import { UpdateBlockContext, LockingContext, CustomBlocksContext } from "./editor-context";
 
 interface EmailBuilderProps {
     /** Initial document to load */
@@ -87,6 +88,8 @@ interface EmailBuilderProps {
     canvasShadow?: boolean;
     /** Full editor (default true). When false, the user is a restricted editor: locked blocks are read-only and the lock toggle is hidden. */
     canManageLocks?: boolean;
+    /** Custom block definitions (from `defineBlock`). They appear in the sidebar and are rendered/edited via each definition's `create`/`Canvas`/`Editor`/`toHtml`. */
+    customBlocks?: BlockDefinition[];
     /**
      * Optional transform applied to the compiled HTML in the Preview tab only —
      * e.g. substitute `{{merge_tags}}` with sample values so the preview shows
@@ -133,7 +136,7 @@ function findBlockDeep(blocks: EmailBlock[], id: string): EmailBlock | undefined
     return undefined;
 }
 
-export function EmailBuilder({ initialDocument, onChange, onSave, onBack, fieldGroups, previewSubstitute, onImageUpload, canvasShadow, canManageLocks = true, t }: EmailBuilderProps) {
+export function EmailBuilder({ initialDocument, onChange, onSave, onBack, fieldGroups, previewSubstitute, onImageUpload, canvasShadow, canManageLocks = true, customBlocks, t }: EmailBuilderProps) {
     const { toast } = useToast();
     const tr = useMemo(() => makeTr(t), [t]);
 
@@ -218,8 +221,23 @@ export function EmailBuilder({ initialDocument, onChange, onSave, onBack, fieldG
 
     // --- Block operations ---
 
-    const addBlock = useCallback((type: BlockType, index?: number) => {
-        const block = createBlock(type);
+    const customBlockMap = useMemo(
+        () => new Map((customBlocks ?? []).map((d) => [d.type, d])),
+        [customBlocks],
+    );
+
+    /** Create a block by type — a registered custom definition's `create()`, else a built-in. */
+    const createAnyBlock = useCallback((type: string): EmailBlock => {
+        const def = customBlockMap.get(type);
+        if (def) {
+            const data = def.create ? def.create() : { padding: { top: 0, right: 0, bottom: 0, left: 0 }, backgroundColor: "transparent" };
+            return { ...data, type, id: nanoid(8) } as unknown as EmailBlock;
+        }
+        return createBlock(type as BlockType);
+    }, [customBlockMap]);
+
+    const addBlock = useCallback((type: string, index?: number) => {
+        const block = createAnyBlock(type);
         updateDocument((doc) => {
             const blocks = [...doc.blocks];
             // Footer always goes to the very end
@@ -235,7 +253,7 @@ export function EmailBuilder({ initialDocument, onChange, onSave, onBack, fieldG
             return { ...doc, blocks };
         });
         setSelectedBlockId(block.id);
-    }, [updateDocument]);
+    }, [updateDocument, createAnyBlock]);
 
     // Helper: apply a transform to a block by ID, searching top-level and inside columns
     const mapBlocksDeep = useCallback((blocks: EmailBlock[], id: string, fn: (b: EmailBlock) => EmailBlock | null): EmailBlock[] => {
@@ -337,7 +355,8 @@ export function EmailBuilder({ initialDocument, onChange, onSave, onBack, fieldG
         const data = event.active.data.current;
         if (data?.type === "catalog") {
             const item = BLOCK_CATALOG.find((b) => b.type === data.blockType);
-            setActiveDrag({ kind: "catalog", label: item?.label ?? "block" });
+            const label = item?.label ?? customBlockMap.get(data.blockType as string)?.label ?? "block";
+            setActiveDrag({ kind: "catalog", label });
         } else if (data?.type === "block-reorder") {
             const b = document.blocks[data.index as number];
             const label = b ? b.type.charAt(0).toUpperCase() + b.type.slice(1) : "block";
@@ -345,8 +364,8 @@ export function EmailBuilder({ initialDocument, onChange, onSave, onBack, fieldG
         }
     }, [document.blocks]);
 
-    const addBlockToColumn = useCallback((type: BlockType, parentBlockId: string, colIdx: number, index: number) => {
-        const newBlock = createBlock(type);
+    const addBlockToColumn = useCallback((type: string, parentBlockId: string, colIdx: number, index: number) => {
+        const newBlock = createAnyBlock(type);
         updateDocument((doc) => ({
             ...doc,
             blocks: doc.blocks.map((b) => {
@@ -374,14 +393,14 @@ export function EmailBuilder({ initialDocument, onChange, onSave, onBack, fieldG
 
         // Dragging from catalog to canvas (top-level)
         if (activeData?.type === "catalog" && overData?.type === "canvas-drop") {
-            addBlock(activeData.blockType as BlockType, overData.index);
+            addBlock(activeData.blockType as string, overData.index);
             return;
         }
 
         // Dragging from catalog into a column
         if (activeData?.type === "catalog" && overData?.type === "column-drop") {
             addBlockToColumn(
-                activeData.blockType as BlockType,
+                activeData.blockType as string,
                 overData.parentBlockId,
                 overData.colIdx,
                 overData.index
@@ -432,7 +451,7 @@ export function EmailBuilder({ initialDocument, onChange, onSave, onBack, fieldG
     // --- Export/Import ---
 
     const handleExportHtml = useCallback(async () => {
-        const html = await renderEmailHtml(document);
+        const html = await renderEmailHtml(document, { blocks: customBlocks });
         const blob = new Blob([html], { type: "text/html" });
         const url = URL.createObjectURL(blob);
         const a = window.document.createElement("a");
@@ -507,7 +526,7 @@ export function EmailBuilder({ initialDocument, onChange, onSave, onBack, fieldG
     }, [toast, tr]);
 
     const handleSave = useCallback(async () => {
-        const html = await renderEmailHtml(document);
+        const html = await renderEmailHtml(document, { blocks: customBlocks });
         onSave?.(document, html);
         setIsDirty(false);
         toast({ title: "Saved" });
@@ -542,7 +561,7 @@ export function EmailBuilder({ initialDocument, onChange, onSave, onBack, fieldG
         if (viewMode !== "code" && viewMode !== "preview") return;
         let cancelled = false;
         setCompiling(true);
-        renderEmailHtml(document)
+        renderEmailHtml(document, { blocks: customBlocks })
             .then((html) => { if (!cancelled) setCompiledHtml(html); })
             .finally(() => { if (!cancelled) setCompiling(false); });
         return () => { cancelled = true; };
@@ -630,6 +649,7 @@ export function EmailBuilder({ initialDocument, onChange, onSave, onBack, fieldG
         <ImageUploadContext.Provider value={onImageUpload}>
         <UpdateBlockContext.Provider value={updateBlock}>
         <LockingContext.Provider value={canManageLocks}>
+        <CustomBlocksContext.Provider value={customBlockMap}>
         <div className="email-builder">
         <DndContext sensors={sensors} collisionDetection={rectIntersection} onDragStart={handleDragStart} onDragEnd={handleDragEnd} onDragCancel={handleDragCancel}>
             <div className="flex flex-col h-[calc(100vh-140px)]">
@@ -846,6 +866,7 @@ export function EmailBuilder({ initialDocument, onChange, onSave, onBack, fieldG
             </DragOverlay>
         </DndContext>
         </div>
+        </CustomBlocksContext.Provider>
         </LockingContext.Provider>
         </UpdateBlockContext.Provider>
         </ImageUploadContext.Provider>

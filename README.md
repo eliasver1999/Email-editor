@@ -124,12 +124,12 @@ The editor ships English text by default. Pass a `t(key)` function to translate 
 | `onImageUpload` | `(file) => Promise<string>` | Upload picked images and return a hosted URL; adds an upload button to image/logo/thumbnail fields. Omit for URL-only. |
 | `t` | `(key) => string` | Translation function for the editor UI. |
 
-## Custom blocks (rendering)
+## Custom blocks (plugin API)
 
-Register your own block types for the email output without forking — provide a `BlockRenderer` via `defineBlock` and pass it to `renderToHtml`:
+Register your own block types — without forking — by defining them once with `defineBlock`. A definition supplies both how the block **renders to email** (`toHtml`, required) and, optionally, how it behaves **in the editor** (`Canvas`, `Editor`, plus sidebar metadata). Pass the definitions to both `<EmailBuilder customBlocks={…} />` and `renderToHtml(doc, { blocks })`:
 
 ```tsx
-import { defineBlock, renderToHtml, type CustomBlock } from "email-block-builder";
+import { defineBlock, EmailBuilder, renderToHtml, type CustomBlock } from "email-block-builder";
 
 interface ProductCardBlock extends CustomBlock {
   type: "product-card";
@@ -138,15 +138,38 @@ interface ProductCardBlock extends CustomBlock {
 
 const productCard = defineBlock<ProductCardBlock>({
   type: "product-card",
+
+  // Sidebar metadata (optional — falls back to the type string)
+  label: "Product card",
+  description: "Title + image promo",
+  category: "content",          // "layout" → Layout tab, otherwise Components tab
+  icon: <ShoppingBag className="h-4 w-4" />,
+
+  // Default data for a freshly-added block (optional)
+  create: () => ({ id: "", type: "product-card", title: "New product", padding: { top: 12, right: 16, bottom: 12, left: 16 }, backgroundColor: "transparent" }),
+
+  // How it looks on the editor canvas (optional — falls back to a placeholder)
+  Canvas: ({ block }) => <strong>{block.title}</strong>,
+
+  // Its property-panel editor (optional — falls back to "no editable properties")
+  Editor: ({ block, update }) => (
+    <input value={block.title} onChange={(e) => update({ title: e.target.value })} />
+  ),
+
+  // How it exports to email HTML (required)
   toHtml: (block, ctx) => ctx.wrapRow(`<strong>${ctx.escapeHtml(block.title)}</strong>`),
 });
 
+// Editor:
+<EmailBuilder customBlocks={[productCard]} onSave={(doc, html) => …} />
+
+// Headless render (e.g. on your server) — pass the same definitions:
 const html = renderToHtml(savedDocument, { blocks: [productCard] });
 ```
 
-`ctx` gives you `settings`, `escapeHtml`, `sanitizeRichHtml`, `wrapRow` (the standard padded/background row), and `renderBlock` (for container blocks). Reusing a built-in `type` overrides it; an unrecognized `type` renders to nothing.
+Custom blocks appear in the sidebar, drag/double-click onto the canvas, render via `Canvas`, and edit via `Editor` in the property panel — then export through `toHtml`. Only `type` and `toHtml` are required; omit the editor fields for render-only blocks.
 
-> **Editor support for custom blocks** (sidebar entry, drag-in, property-panel editor) is planned for **0.2**. Today custom blocks render at send time via your `toHtml`; they aren't yet placeable/editable in the visual editor.
+`ctx` gives you `settings`, `escapeHtml`, `sanitizeRichHtml`, `wrapRow` (the standard padded/background row), and `renderBlock` (for container blocks). Reusing a built-in `type` overrides it; an unrecognized `type` renders to nothing.
 
 ## Testing in real email clients
 
@@ -165,7 +188,6 @@ This is an early **0.x** release; the API may change between minor versions.
 - The **renderer** is covered by tests; the **editor UI** is not yet — verify interactions in your app.
 - **Sanitization** is a conservative baseline (see above), not a full sanitizer.
 - **No dark-mode** handling or **plain-text / multipart** alternative yet.
-- **Custom blocks** render at send time but aren't editable in the UI yet (0.2).
 
 ## License
 

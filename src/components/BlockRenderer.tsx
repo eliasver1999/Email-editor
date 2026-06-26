@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
-import { EmailBlock, Padding } from "../types";
+import { EmailBlock, CustomBlock, Padding } from "../types";
+import type { BlockDefinition } from "../renderer/toHtml";
 import {
     Type,
     Heading,
@@ -30,7 +31,7 @@ import {
 import { cn } from "../ui/utils";
 import { useTr } from "../i18n";
 import { useImageUpload } from "../upload";
-import { useUpdateBlock, useCanManageLocks } from "../editor-context";
+import { useUpdateBlock, useCanManageLocks, useCustomBlocks } from "../editor-context";
 import { toast } from "../ui/hooks";
 
 function paddingStyle(p: Padding): React.CSSProperties {
@@ -239,6 +240,7 @@ interface BlockRendererProps {
 
 export function BlockRenderer({ block, isSelected, onClick, isEditing, onEditContent }: BlockRendererProps) {
     const canManageLocks = useCanManageLocks();
+    const customBlocks = useCustomBlocks();
     if (block.hidden) return null;
 
     // For button blocks, backgroundColor is the button color, not the wrapper bg
@@ -248,7 +250,8 @@ export function BlockRenderer({ block, isSelected, onClick, isEditing, onEditCon
 
     // Restricted editors can't edit locked blocks — no inline editing, no upload placeholder.
     const lockedReadonly = !!block.locked && !canManageLocks;
-    const effectiveEditing = isEditing && !lockedReadonly;
+    const effectiveEditing = !!isEditing && !lockedReadonly;
+    const customDef = customBlocks.get(block.type);
 
     const wrapperStyle: React.CSSProperties = {
         ...paddingStyle(block.padding),
@@ -262,7 +265,20 @@ export function BlockRenderer({ block, isSelected, onClick, isEditing, onEditCon
     return (
         <div style={wrapperStyle} onClick={(e) => { e.stopPropagation(); onClick?.(); }}>
             {block.locked && isEditing && <LockBadge bg={block.backgroundColor} />}
-            {renderBlock(block, effectiveEditing, effectiveEditing ? onEditContent : undefined)}
+            {customDef
+                ? customDef.Canvas
+                    ? <customDef.Canvas block={block as unknown as CustomBlock} editing={effectiveEditing} />
+                    : <CustomBlockFallback def={customDef} />
+                : renderBlock(block, effectiveEditing, effectiveEditing ? onEditContent : undefined)}
+        </div>
+    );
+}
+
+/** Canvas fallback when a custom block has no `Canvas` component. */
+function CustomBlockFallback({ def }: { def: BlockDefinition }) {
+    return (
+        <div style={{ padding: "16px", border: "2px dashed #d1d5db", borderRadius: "8px", textAlign: "center", color: "#9ca3af", fontSize: "12px" }}>
+            {def.label ?? def.type}
         </div>
     );
 }

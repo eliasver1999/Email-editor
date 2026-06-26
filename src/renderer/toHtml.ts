@@ -18,6 +18,7 @@ import {
     FooterBlock,
     QuoteBlock,
 } from "../types";
+import type * as React from "react";
 
 /**
  * Email-safe PNG icons per social platform. Hosted (icons8) so they render in
@@ -177,6 +178,29 @@ export interface BlockRenderer<B extends AnyBlock = AnyBlock> {
     toHtml(block: B, ctx: BlockRenderContext): string;
 }
 
+/**
+ * A block definition: the renderer (`type` + `toHtml`) plus optional editor
+ * metadata so the block can be added/shown/edited via `<EmailBuilder customBlocks>`.
+ * Render-only usage can omit the editor fields. Pass the SAME definitions to both
+ * `renderToHtml(doc, { blocks })` (send time) and `<EmailBuilder customBlocks>` (editor).
+ */
+export interface BlockDefinition<B extends AnyBlock = CustomBlock> extends BlockRenderer<B> {
+    /** Sidebar label. */
+    label?: string;
+    /** Sidebar description. */
+    description?: string;
+    /** Sidebar group ("content" | "media" | "layout" | …); defaults to the Components tab. */
+    category?: string;
+    /** Sidebar icon (any node). */
+    icon?: React.ReactNode;
+    /** Default block data when added (the builder assigns a fresh `id`). */
+    create?: () => B;
+    /** How the block looks on the editing canvas. Falls back to a labeled placeholder. */
+    Canvas?: (props: { block: B; editing: boolean }) => React.ReactNode;
+    /** The block's property-panel editor. Falls back to a "no editor" notice. */
+    Editor?: (props: { block: B; update: (updates: Partial<B>) => void }) => React.ReactNode;
+}
+
 /** Options for `renderToHtml` / `renderEmailHtml`. */
 export interface RenderOptions {
     /** Custom block renderers, looked up by `type`. Reuse a built-in `type` to override it. */
@@ -192,8 +216,8 @@ export interface RenderOptions {
  *     toHtml: (block, ctx) => ctx.wrapRow(`<strong>${ctx.escapeHtml(block.title)}</strong>`),
  *   });
  */
-export function defineBlock<B extends AnyBlock = CustomBlock>(renderer: BlockRenderer<B>): BlockRenderer<B> {
-    return renderer;
+export function defineBlock<B extends AnyBlock = CustomBlock>(definition: BlockDefinition<B>): BlockDefinition<B> {
+    return definition;
 }
 
 /** Built-in block renderers. Each reproduces its block type's email HTML exactly. */

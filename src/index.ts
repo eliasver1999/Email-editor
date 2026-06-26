@@ -3,7 +3,7 @@
 export { EmailBuilder } from "./EmailBuilder";
 export { EmailBuilderToaster } from "./ui/Toaster";
 export { renderToHtml, renderEmailHtml, exportToJson, importFromJson, defineBlock } from "./renderer/toHtml";
-export type { BlockRenderer, BlockRenderContext, RenderOptions } from "./renderer/toHtml";
+export type { BlockRenderer, BlockDefinition, BlockRenderContext, RenderOptions } from "./renderer/toHtml";
 export { createBlock, createStarterDocument } from "./defaults";
 export type { ImageUploadFn } from "./upload";
 export type {
