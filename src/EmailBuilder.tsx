@@ -951,7 +951,10 @@ export function EmailBuilder({ initialDocument, locales, initialDocuments, defau
                         <div
                             className="mx-auto my-6 transition-all"
                             style={{
-                                maxWidth: previewWidth === "mobile" ? "375px" : `${Math.max(document.settings.contentWidth + 80, 700)}px`,
+                                // Desktop preview matches the edit canvas width
+                                // (Canvas uses settings.contentWidth) so the email
+                                // doesn't shift/resize when toggling Edit↔Preview.
+                                maxWidth: previewWidth === "mobile" ? "375px" : `${document.settings.contentWidth}px`,
                             }}
                         >
                             {/* Email client chrome */}
