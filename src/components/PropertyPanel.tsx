@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import { EmailBlock, Padding, TextBlock, HeadingBlock, ImageBlock, ButtonBlock, DividerBlock, SpacerBlock, SocialBlock, HtmlBlock, LogoBlock, FooterBlock, VideoBlock, QuoteBlock, ColumnsBlock, ColumnConfig, EmailSettings, MergeFieldGroup, BorderStyle, DEFAULT_BORDER } from "../types";
+import { EmailBlock, Padding, TextBlock, HeadingBlock, ImageBlock, ButtonBlock, DividerBlock, SpacerBlock, SocialBlock, HtmlBlock, LogoBlock, FooterBlock, QuoteBlock, ColumnsBlock, ColumnConfig, EmailSettings, MergeFieldGroup, BorderStyle, DEFAULT_BORDER } from "../types";
 import { Input, Label, Button, Slider, ScrollArea, Separator, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Popover, PopoverContent, PopoverTrigger, Tabs, TabsList, TabsTrigger, TabsContent } from "../ui/primitives";
 import { CodeEditor } from "../ui/CodeEditor";
 import { useTr } from "../i18n";
@@ -134,7 +134,6 @@ export function PropertyPanel({ block, onUpdate, onDelete, onDuplicate, onToggle
                     {block.type === "html" && <HtmlProps block={block} update={update} />}
                     {block.type === "logo" && <LogoProps block={block} update={update} />}
                     {block.type === "footer" && <FooterProps block={block} update={update} />}
-                    {block.type === "video" && <VideoProps block={block} update={update} />}
                     {block.type === "quote" && <QuoteProps block={block} update={update} />}
                     {block.type === "columns" && <ColumnsProps block={block} update={update} />}
 
@@ -229,6 +228,7 @@ function ImageInput({ value, onChange, placeholder }: { value: string; onChange:
     const onImageUpload = useImageUpload();
     const inputRef = useRef<HTMLInputElement>(null);
     const [uploading, setUploading] = useState(false);
+    const [dragOver, setDragOver] = useState(false);
 
     const handleFile = async (file: File | undefined) => {
         if (!file || !onImageUpload) return;
@@ -248,7 +248,17 @@ function ImageInput({ value, onChange, placeholder }: { value: string; onChange:
     };
 
     return (
-        <div className="mt-1 flex items-center gap-1.5">
+        <div
+            className={`mt-1 flex items-center gap-1.5 rounded-md ${dragOver ? "ring-2 ring-primary ring-offset-1" : ""}`}
+            onDragOver={onImageUpload ? (e) => { e.preventDefault(); setDragOver(true); } : undefined}
+            onDragLeave={onImageUpload ? () => setDragOver(false) : undefined}
+            onDrop={onImageUpload ? (e) => {
+                e.preventDefault();
+                setDragOver(false);
+                const f = Array.from(e.dataTransfer?.files ?? []).find((x) => x.type.startsWith("image/"));
+                if (f) handleFile(f);
+            } : undefined}
+        >
             <Input
                 className="h-8 text-xs flex-1"
                 placeholder={placeholder ?? "https://..."}
@@ -491,27 +501,6 @@ function FooterProps({ block, update }: { block: FooterBlock; update: (u: Partia
             <ColorInput label={tr("emailBuilder.prop.textColor", "Text Color")} value={block.color} onChange={(v) => update({ color: v })} />
             <SliderField label={tr("emailBuilder.prop.fontSize", "Font Size")} value={block.fontSize} min={8} max={16} onChange={(v) => update({ fontSize: v })} suffix="px" />
             <AlignSelect value={block.textAlign} onChange={(v) => update({ textAlign: v })} />
-        </div>
-    );
-}
-
-function VideoProps({ block, update }: { block: VideoBlock; update: (u: Partial<VideoBlock>) => void }) {
-    const tr = useTr();
-    return (
-        <div className="space-y-3">
-            <div>
-                <Label className="text-xs">{tr("emailBuilder.prop.thumbnailUrl", "Thumbnail URL")}</Label>
-                <ImageInput value={block.thumbnailUrl} onChange={(url) => update({ thumbnailUrl: url })} />
-            </div>
-            <div>
-                <Label className="text-xs">{tr("emailBuilder.prop.videoUrl", "Video URL")}</Label>
-                <Input className="h-8 mt-1 text-xs" placeholder="https://youtube.com/..." value={block.videoUrl} onChange={(e) => update({ videoUrl: e.target.value })} />
-            </div>
-            <div>
-                <Label className="text-xs">{tr("emailBuilder.prop.altText", "Alt Text")}</Label>
-                <Input className="h-8 mt-1 text-xs" value={block.alt} onChange={(e) => update({ alt: e.target.value })} />
-            </div>
-            <AlignSelect value={block.align} onChange={(v) => update({ align: v })} />
         </div>
     );
 }

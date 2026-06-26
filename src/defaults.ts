@@ -12,7 +12,6 @@ import {
     HtmlBlock,
     LogoBlock,
     FooterBlock,
-    VideoBlock,
     QuoteBlock,
     BlockType,
     EmailDocument,
@@ -36,7 +35,6 @@ export function createBlock(type: BlockType): EmailBlock {
         html: createHtmlBlock,
         logo: createLogoBlock,
         footer: createFooterBlock,
-        video: createVideoBlock,
         quote: createQuoteBlock,
     };
     return factories[type]();
@@ -218,19 +216,6 @@ export function createFooterBlock(): FooterBlock {
         textAlign: "center",
         padding: { top: 20, right: 20, bottom: 20, left: 20 },
         backgroundColor: "#f9fafb",
-    };
-}
-
-export function createVideoBlock(): VideoBlock {
-    return {
-        id: nanoid(8),
-        type: "video",
-        thumbnailUrl: "",
-        videoUrl: "",
-        alt: "Watch video",
-        align: "center",
-        padding: { ...DEFAULT_PADDING },
-        backgroundColor: "transparent",
     };
 }
 

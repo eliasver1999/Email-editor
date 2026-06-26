@@ -24,7 +24,6 @@ export type {
     HtmlBlock,
     LogoBlock,
     FooterBlock,
-    VideoBlock,
     QuoteBlock,
     Padding,
     BorderStyle,

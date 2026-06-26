@@ -80,7 +80,7 @@ The exported HTML keeps the raw `{{tokens}}` so your backend does the final subs
 
 ## Image uploads
 
-Image, logo, and video-thumbnail fields take a URL by default. Pass `onImageUpload` to add an upload button next to them — the builder hands you the picked `File`, you upload it wherever you store assets, and return the hosted URL:
+Image and logo fields take a URL by default. Pass `onImageUpload` to add an upload button — with drag-and-drop — next to them: the builder hands you the picked or dropped `File`, you upload it wherever you store assets, and return the hosted URL. Users can also drop an image file straight onto an empty image/logo block on the canvas.
 
 ```tsx
 <EmailBuilder

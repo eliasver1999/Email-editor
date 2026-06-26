@@ -14,7 +14,6 @@ export type BlockType =
     | "html"
     | "logo"
     | "footer"
-    | "video"
     | "quote";
 
 // --- Style primitives ---
@@ -154,14 +153,6 @@ export interface FooterBlock extends BaseBlock {
     textAlign: "left" | "center" | "right";
 }
 
-export interface VideoBlock extends BaseBlock {
-    type: "video";
-    thumbnailUrl: string;
-    videoUrl: string;
-    alt: string;
-    align: "left" | "center" | "right";
-}
-
 export interface QuoteBlock extends BaseBlock {
     type: "quote";
     content: string;
@@ -187,7 +178,6 @@ export type EmailBlock =
     | HtmlBlock
     | LogoBlock
     | FooterBlock
-    | VideoBlock
     | QuoteBlock;
 
 /**
@@ -276,7 +266,6 @@ export const BLOCK_CATALOG: BlockCatalogItem[] = [
     { type: "columns", label: "Columns", description: "Multi-column layout", icon: "Columns3", category: "layout" },
     { type: "social", label: "Social Links", description: "Social media icons", icon: "Share2", category: "media" },
     { type: "logo", label: "Logo", description: "Brand logo with optional link", icon: "Crown", category: "media" },
-    { type: "video", label: "Video", description: "Video thumbnail with play button", icon: "Play", category: "media" },
     { type: "quote", label: "Quote", description: "Blockquote with author", icon: "Quote", category: "content" },
     { type: "footer", label: "Footer", description: "Email footer with small text", icon: "PanelBottom", category: "layout" },
     { type: "html", label: "Custom HTML", description: "Raw HTML block", icon: "Code", category: "other" },

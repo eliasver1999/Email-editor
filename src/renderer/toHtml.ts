@@ -16,7 +16,6 @@ import {
     HtmlBlock,
     LogoBlock,
     FooterBlock,
-    VideoBlock,
     QuoteBlock,
 } from "../types";
 
@@ -303,16 +302,6 @@ ${innerBlocks}
         type: "footer",
         toHtml: (block, ctx) =>
             ctx.wrapRow(`<div style="color:${block.color};font-size:${block.fontSize}px;text-align:${block.textAlign};line-height:1.5;">${ctx.sanitizeRichHtml(block.content)}</div>`),
-    }),
-    defineBlock<VideoBlock>({
-        type: "video",
-        toHtml: (block, ctx) => {
-            const thumb = block.thumbnailUrl
-                ? `<img src="${ctx.escapeHtml(block.thumbnailUrl)}" alt="${ctx.escapeHtml(block.alt)}" style="max-width:100%;display:block;border-radius:8px;" />`
-                : `<div style="width:100%;height:200px;background:#1a1a2e;border-radius:8px;text-align:center;line-height:200px;color:#999;font-size:14px;">▶ ${ctx.escapeHtml(block.alt)}</div>`;
-            const linked = block.videoUrl ? `<a href="${ctx.escapeHtml(block.videoUrl)}" target="_blank">${thumb}</a>` : thumb;
-            return ctx.wrapRow(`<div style="text-align:${block.align};">${linked}</div>`);
-        },
     }),
     defineBlock<QuoteBlock>({
         type: "quote",

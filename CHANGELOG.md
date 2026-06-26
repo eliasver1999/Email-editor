@@ -7,9 +7,18 @@ include breaking changes.
 
 ## [Unreleased]
 
+### Added
+
+- **Drag-and-drop image upload**: drop an image file onto an image/logo field, or onto an empty image/logo block on the canvas, to upload it (via `onImageUpload`).
+- **Lockable components**: `<EmailBuilder canManageLocks>` (default `true`). Restricted editors (`false`) can't edit/move/delete locked blocks; locked blocks show a background-contrasting lock badge.
+
 ### Changed
 
 - New blocks default to **no padding** (avoids inset/full-bleed layout issues); set padding per-block in the Properties panel as needed.
+
+### Removed
+
+- The **Video** block — use a linked image block instead.
 
 ## [0.1.0] - 2026-06-25
 

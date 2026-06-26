@@ -569,63 +569,6 @@ function renderBlock(
             return <div style={footerStyle} dangerouslySetInnerHTML={{ __html: block.content }} />;
         }
 
-        case "video":
-            return (
-                <div style={{ textAlign: block.align }}>
-                    <a href={isEditing ? undefined : block.videoUrl || undefined} style={{ display: "inline-block", position: "relative" }}>
-                        {block.thumbnailUrl ? (
-                            <div style={{ position: "relative", display: "inline-block" }}>
-                                <img
-                                    src={block.thumbnailUrl}
-                                    alt={block.alt}
-                                    style={{ maxWidth: "100%", display: "block", borderRadius: "8px" }}
-                                />
-                                <div style={{
-                                    position: "absolute",
-                                    top: "50%",
-                                    left: "50%",
-                                    transform: "translate(-50%, -50%)",
-                                    width: "60px",
-                                    height: "60px",
-                                    backgroundColor: "rgba(0,0,0,0.7)",
-                                    borderRadius: "50%",
-                                    display: "flex",
-                                    alignItems: "center",
-                                    justifyContent: "center",
-                                }}>
-                                    <div style={{ width: 0, height: 0, borderTop: "12px solid transparent", borderBottom: "12px solid transparent", borderLeft: "20px solid white", marginLeft: "4px" }} />
-                                </div>
-                            </div>
-                        ) : (
-                            <div style={{
-                                width: "100%",
-                                height: "200px",
-                                backgroundColor: "#1a1a2e",
-                                display: "flex",
-                                flexDirection: "column",
-                                alignItems: "center",
-                                justifyContent: "center",
-                                borderRadius: "8px",
-                                gap: "8px",
-                            }}>
-                                <div style={{
-                                    width: "50px",
-                                    height: "50px",
-                                    backgroundColor: "rgba(255,255,255,0.2)",
-                                    borderRadius: "50%",
-                                    display: "flex",
-                                    alignItems: "center",
-                                    justifyContent: "center",
-                                }}>
-                                    <div style={{ width: 0, height: 0, borderTop: "10px solid transparent", borderBottom: "10px solid transparent", borderLeft: "16px solid white", marginLeft: "3px" }} />
-                                </div>
-                                <span style={{ color: "#999", fontSize: "12px" }}>Video placeholder</span>
-                            </div>
-                        )}
-                    </a>
-                </div>
-            );
-
         case "quote":
             return (
                 <div style={{
@@ -705,6 +648,7 @@ function ImageUploadPlaceholder({ blockId }: { blockId: string }) {
     const updateBlock = useUpdateBlock();
     const inputRef = useRef<HTMLInputElement>(null);
     const [uploading, setUploading] = useState(false);
+    const [dragOver, setDragOver] = useState(false);
 
     const handleFile = async (file: File | undefined) => {
         if (!file || !onImageUpload) return;
@@ -723,19 +667,35 @@ function ImageUploadPlaceholder({ blockId }: { blockId: string }) {
         }
     };
 
+    // Native file drag-and-drop (separate from dnd-kit's block reordering).
+    const dropProps = onImageUpload
+        ? {
+              onDragOver: (e: React.DragEvent) => { e.preventDefault(); e.stopPropagation(); setDragOver(true); },
+              onDragLeave: () => setDragOver(false),
+              onDrop: (e: React.DragEvent) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setDragOver(false);
+                  const file = Array.from(e.dataTransfer?.files ?? []).find((f) => f.type.startsWith("image/"));
+                  if (file) handleFile(file);
+              },
+          }
+        : {};
+
     return (
         <div
+            {...dropProps}
             style={{
                 width: "100%",
                 minHeight: "150px",
-                backgroundColor: "#f3f4f6",
+                backgroundColor: dragOver ? "hsl(var(--primary) / 0.08)" : "#f3f4f6",
                 display: "flex",
                 flexDirection: "column",
                 alignItems: "center",
                 justifyContent: "center",
                 gap: "10px",
                 borderRadius: "8px",
-                border: "2px dashed #d1d5db",
+                border: dragOver ? "2px dashed hsl(var(--primary))" : "2px dashed #d1d5db",
                 padding: "16px",
             }}
         >
@@ -761,6 +721,7 @@ function ImageUploadPlaceholder({ blockId }: { blockId: string }) {
                         {uploading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Upload className="h-3.5 w-3.5" />}
                         {tr("emailBuilder.prop.addImage", "Add image")}
                     </button>
+                    <span className="text-[10px] text-muted-foreground">{tr("emailBuilder.prop.orDropImage", "or drop an image here")}</span>
                 </>
             )}
         </div>
