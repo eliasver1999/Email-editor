@@ -44,6 +44,8 @@ export interface BaseBlock {
     backgroundColor: string;
     /** Whether the block is hidden (still in tree, just not rendered) */
     hidden?: boolean;
+    /** When true, restricted editors (canManageLocks=false) can't edit/move/delete it. */
+    locked?: boolean;
 }
 
 // --- Concrete blocks ---

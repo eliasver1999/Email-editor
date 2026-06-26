@@ -17,6 +17,8 @@ import {
     Braces,
     Upload,
     Loader2,
+    Lock,
+    Unlock,
 } from "lucide-react";
 
 /** Popover menu of personalization tokens; clicking one inserts it. */
@@ -60,11 +62,15 @@ interface PropertyPanelProps {
     onDelete: (id: string) => void;
     onDuplicate: (id: string) => void;
     onToggleVisibility: (id: string) => void;
+    /** Toggle a block's locked state (full editors only). */
+    onToggleLock?: (id: string) => void;
+    /** False = restricted editor: locked blocks are read-only and the lock toggle is hidden. */
+    canManageLocks?: boolean;
     /** Personalization tokens (from useTemplateFields), shown for text-bearing blocks. */
     fieldGroups?: MergeFieldGroup[];
 }
 
-export function PropertyPanel({ block, onUpdate, onDelete, onDuplicate, onToggleVisibility, fieldGroups }: PropertyPanelProps) {
+export function PropertyPanel({ block, onUpdate, onDelete, onDuplicate, onToggleVisibility, onToggleLock, canManageLocks = true, fieldGroups }: PropertyPanelProps) {
     const tr = useTr();
     if (!block) {
         return (
@@ -77,6 +83,7 @@ export function PropertyPanel({ block, onUpdate, onDelete, onDuplicate, onToggle
     }
 
     const update = (updates: Partial<any>) => onUpdate(block.id, updates);
+    const readOnly = !!block.locked && !canManageLocks;
 
     return (
         <div className="h-full flex flex-col">
@@ -87,19 +94,34 @@ export function PropertyPanel({ block, onUpdate, onDelete, onDuplicate, onToggle
                     </h3>
                 </div>
                 <div className="flex items-center gap-1">
-                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => onToggleVisibility(block.id)} title={block.hidden ? tr("emailBuilder.prop.show", "Show") : tr("emailBuilder.prop.hide", "Hide")}>
-                        {block.hidden ? <Eye className="h-3.5 w-3.5" /> : <EyeOff className="h-3.5 w-3.5" />}
-                    </Button>
-                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => onDuplicate(block.id)} title={tr("emailBuilder.prop.duplicate", "Duplicate")}>
-                        <Copy className="h-3.5 w-3.5" />
-                    </Button>
-                    <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive" onClick={() => onDelete(block.id)} title={tr("emailBuilder.prop.delete", "Delete")}>
-                        <Trash2 className="h-3.5 w-3.5" />
-                    </Button>
+                    {canManageLocks && onToggleLock && (
+                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => onToggleLock(block.id)} title={block.locked ? tr("emailBuilder.prop.unlock", "Unlock") : tr("emailBuilder.prop.lock", "Lock")}>
+                            {block.locked ? <Lock className="h-3.5 w-3.5 text-primary" /> : <Unlock className="h-3.5 w-3.5" />}
+                        </Button>
+                    )}
+                    {!readOnly && (
+                        <>
+                            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => onToggleVisibility(block.id)} title={block.hidden ? tr("emailBuilder.prop.show", "Show") : tr("emailBuilder.prop.hide", "Hide")}>
+                                {block.hidden ? <Eye className="h-3.5 w-3.5" /> : <EyeOff className="h-3.5 w-3.5" />}
+                            </Button>
+                            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => onDuplicate(block.id)} title={tr("emailBuilder.prop.duplicate", "Duplicate")}>
+                                <Copy className="h-3.5 w-3.5" />
+                            </Button>
+                            <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive" onClick={() => onDelete(block.id)} title={tr("emailBuilder.prop.delete", "Delete")}>
+                                <Trash2 className="h-3.5 w-3.5" />
+                            </Button>
+                        </>
+                    )}
                 </div>
             </div>
 
             <ScrollArea className="flex-1">
+                {readOnly ? (
+                    <div className="px-4 py-8 text-center">
+                        <Lock className="h-5 w-5 mx-auto text-muted-foreground mb-2" />
+                        <p className="text-sm text-muted-foreground">{tr("emailBuilder.prop.lockedNotice", "This block is locked and can't be edited.")}</p>
+                    </div>
+                ) : (
                 <div className="px-4 pb-4 space-y-4">
                     {/* Type-specific properties */}
                     {block.type === "text" && <TextProps block={block} update={update} />}
@@ -142,6 +164,7 @@ export function PropertyPanel({ block, onUpdate, onDelete, onDuplicate, onToggle
                         <ColorInput label={tr("emailBuilder.prop.color", "Color")} value={block.backgroundColor} onChange={(v) => update({ backgroundColor: v })} />
                     </div>
                 </div>
+                )}
             </ScrollArea>
         </div>
     );

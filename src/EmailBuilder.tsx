@@ -27,6 +27,8 @@ import {
     Plus,
     MoreHorizontal,
     ClipboardPaste,
+    Lock,
+    Unlock,
 } from "lucide-react";
 import { cn } from "./ui/utils";
 import { useToast, useUnsavedChanges } from "./ui/hooks";
@@ -66,7 +68,7 @@ import { PropertyPanel, EmailSettingsPanel } from "./components/PropertyPanel";
 import { exportToJson, importFromJson, renderEmailHtml } from "./renderer/toHtml";
 import { BuilderI18nContext, makeTr } from "./i18n";
 import { ImageUploadContext, type ImageUploadFn } from "./upload";
-import { UpdateBlockContext } from "./editor-context";
+import { UpdateBlockContext, LockingContext } from "./editor-context";
 
 interface EmailBuilderProps {
     /** Initial document to load */
@@ -83,6 +85,8 @@ interface EmailBuilderProps {
     onImageUpload?: ImageUploadFn;
     /** Show a drop shadow around the canvas in edit mode (off by default). */
     canvasShadow?: boolean;
+    /** Full editor (default true). When false, the user is a restricted editor: locked blocks are read-only and the lock toggle is hidden. */
+    canManageLocks?: boolean;
     /**
      * Optional transform applied to the compiled HTML in the Preview tab only —
      * e.g. substitute `{{merge_tags}}` with sample values so the preview shows
@@ -115,7 +119,21 @@ function MoreMenuItem({ icon, label, onClick }: { icon: React.ReactNode; label: 
     );
 }
 
-export function EmailBuilder({ initialDocument, onChange, onSave, onBack, fieldGroups, previewSubstitute, onImageUpload, canvasShadow, t }: EmailBuilderProps) {
+/** Find a block by id anywhere in the tree (top level or inside columns). */
+function findBlockDeep(blocks: EmailBlock[], id: string): EmailBlock | undefined {
+    for (const b of blocks) {
+        if (b.id === id) return b;
+        if (b.type === "columns") {
+            for (const col of (b as ColumnsBlock).columns) {
+                const found = findBlockDeep(col.blocks, id);
+                if (found) return found;
+            }
+        }
+    }
+    return undefined;
+}
+
+export function EmailBuilder({ initialDocument, onChange, onSave, onBack, fieldGroups, previewSubstitute, onImageUpload, canvasShadow, canManageLocks = true, t }: EmailBuilderProps) {
     const { toast } = useToast();
     const tr = useMemo(() => makeTr(t), [t]);
 
@@ -241,22 +259,25 @@ export function EmailBuilder({ initialDocument, onChange, onSave, onBack, fieldG
 
     const updateBlock = useCallback((id: string, updates: Partial<EmailBlock>) => {
         // coalesce=true: rapid edits (typing, slider drags) collapse into one undo step.
-        updateDocument((doc) => ({
-            ...doc,
-            blocks: mapBlocksDeep(doc.blocks, id, (b) => ({ ...b, ...updates } as EmailBlock)),
-        }), true);
-    }, [updateDocument, mapBlocksDeep]);
+        updateDocument((doc) => {
+            const target = findBlockDeep(doc.blocks, id);
+            if (target?.locked && !canManageLocks) return doc; // locked → restricted editors can't change it
+            return { ...doc, blocks: mapBlocksDeep(doc.blocks, id, (b) => ({ ...b, ...updates } as EmailBlock)) };
+        }, true);
+    }, [updateDocument, mapBlocksDeep, canManageLocks]);
 
     const deleteBlock = useCallback((id: string) => {
-        updateDocument((doc) => ({
-            ...doc,
-            blocks: mapBlocksDeep(doc.blocks, id, () => null),
-        }));
+        updateDocument((doc) => {
+            const target = findBlockDeep(doc.blocks, id);
+            if (target?.locked && !canManageLocks) return doc;
+            return { ...doc, blocks: mapBlocksDeep(doc.blocks, id, () => null) };
+        });
         if (selectedBlockId === id) setSelectedBlockId(null);
-    }, [updateDocument, selectedBlockId, mapBlocksDeep]);
+    }, [updateDocument, selectedBlockId, mapBlocksDeep, canManageLocks]);
 
     const duplicateBlock = useCallback((id: string) => {
         updateDocument((doc) => {
+            if (findBlockDeep(doc.blocks, id)?.locked && !canManageLocks) return doc;
             // Try top-level first
             const idx = doc.blocks.findIndex((b) => b.id === id);
             if (idx !== -1) {
@@ -285,14 +306,23 @@ export function EmailBuilder({ initialDocument, onChange, onSave, onBack, fieldG
     }, [updateDocument]);
 
     const toggleVisibility = useCallback((id: string) => {
+        updateDocument((doc) => {
+            const target = findBlockDeep(doc.blocks, id);
+            if (target?.locked && !canManageLocks) return doc;
+            return { ...doc, blocks: mapBlocksDeep(doc.blocks, id, (b) => ({ ...b, hidden: !b.hidden } as EmailBlock)) };
+        });
+    }, [updateDocument, mapBlocksDeep, canManageLocks]);
+
+    const toggleLock = useCallback((id: string) => {
         updateDocument((doc) => ({
             ...doc,
-            blocks: mapBlocksDeep(doc.blocks, id, (b) => ({ ...b, hidden: !b.hidden } as EmailBlock)),
+            blocks: mapBlocksDeep(doc.blocks, id, (b) => ({ ...b, locked: !b.locked } as EmailBlock)),
         }));
     }, [updateDocument, mapBlocksDeep]);
 
     const moveBlock = useCallback((fromIndex: number, toIndex: number) => {
         updateDocument((doc) => {
+            if (doc.blocks[fromIndex]?.locked && !canManageLocks) return doc;
             const blocks = [...doc.blocks];
             const [moved] = blocks.splice(fromIndex, 1);
             blocks.splice(toIndex > fromIndex ? toIndex - 1 : toIndex, 0, moved);
@@ -599,6 +629,7 @@ export function EmailBuilder({ initialDocument, onChange, onSave, onBack, fieldG
         <BuilderI18nContext.Provider value={t}>
         <ImageUploadContext.Provider value={onImageUpload}>
         <UpdateBlockContext.Provider value={updateBlock}>
+        <LockingContext.Provider value={canManageLocks}>
         <div className="email-builder">
         <DndContext sensors={sensors} collisionDetection={rectIntersection} onDragStart={handleDragStart} onDragEnd={handleDragEnd} onDragCancel={handleDragCancel}>
             <div className="flex flex-col h-[calc(100vh-140px)]">
@@ -723,6 +754,8 @@ export function EmailBuilder({ initialDocument, onChange, onSave, onBack, fieldG
                                     onDelete={deleteBlock}
                                     onDuplicate={duplicateBlock}
                                     onToggleVisibility={toggleVisibility}
+                                    onToggleLock={toggleLock}
+                                    canManageLocks={canManageLocks}
                                     fieldGroups={fieldGroups}
                                 />
                             ) : (
@@ -813,6 +846,7 @@ export function EmailBuilder({ initialDocument, onChange, onSave, onBack, fieldG
             </DragOverlay>
         </DndContext>
         </div>
+        </LockingContext.Provider>
         </UpdateBlockContext.Provider>
         </ImageUploadContext.Provider>
         </BuilderI18nContext.Provider>

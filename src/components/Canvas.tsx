@@ -4,6 +4,7 @@ import { BlockRenderer } from "./BlockRenderer";
 import { GripVertical, Plus } from "lucide-react";
 import { cn } from "../ui/utils";
 import { useTr } from "../i18n";
+import { useCanManageLocks } from "../editor-context";
 
 interface CanvasProps {
     blocks: EmailBlock[];
@@ -56,9 +57,12 @@ function DraggableBlock({
     index: number;
     children: React.ReactNode;
 }) {
+    const canManageLocks = useCanManageLocks();
+    const lockedReadonly = !!block.locked && !canManageLocks;
     const { attributes, listeners, setNodeRef, isDragging: isThisDragging } = useDraggable({
         id: `block-${block.id}`,
         data: { type: "block-reorder", blockId: block.id, index },
+        disabled: lockedReadonly,
     });
 
     // No transform here — the floating DragOverlay is the moving preview; the
@@ -71,14 +75,16 @@ function DraggableBlock({
                 isThisDragging && "opacity-30 ring-2 ring-primary/40 ring-inset rounded"
             )}
         >
-            {/* Drag handle */}
-            <div
-                {...listeners}
-                {...attributes}
-                className="absolute left-1 top-1 z-20 opacity-0 group-hover:opacity-100 transition-opacity cursor-grab active:cursor-grabbing bg-card border rounded p-1 shadow-sm"
-            >
-                <GripVertical className="h-3.5 w-3.5 text-muted-foreground" />
-            </div>
+            {/* Drag handle — hidden for locked blocks a restricted editor can't move */}
+            {!lockedReadonly && (
+                <div
+                    {...listeners}
+                    {...attributes}
+                    className="absolute left-1 top-1 z-20 opacity-0 group-hover:opacity-100 transition-opacity cursor-grab active:cursor-grabbing bg-card border rounded p-1 shadow-sm"
+                >
+                    <GripVertical className="h-3.5 w-3.5 text-muted-foreground" />
+                </div>
+            )}
             {children}
         </div>
     );

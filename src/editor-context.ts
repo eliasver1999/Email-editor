@@ -13,3 +13,14 @@ export const UpdateBlockContext = createContext<UpdateBlockFn | undefined>(undef
 export function useUpdateBlock(): UpdateBlockFn | undefined {
     return useContext(UpdateBlockContext);
 }
+
+/**
+ * Whether the current user may manage locks and edit locked blocks (a "full"
+ * editor). Restricted editors (false) can't modify locked blocks. Defaults to
+ * true so blocks are fully editable when no provider is present.
+ */
+export const LockingContext = createContext<boolean>(true);
+
+export function useCanManageLocks(): boolean {
+    return useContext(LockingContext);
+}

@@ -25,11 +25,12 @@ import {
     RemoveFormatting,
     Upload,
     Loader2,
+    Lock,
 } from "lucide-react";
 import { cn } from "../ui/utils";
 import { useTr } from "../i18n";
 import { useImageUpload } from "../upload";
-import { useUpdateBlock } from "../editor-context";
+import { useUpdateBlock, useCanManageLocks } from "../editor-context";
 import { toast } from "../ui/hooks";
 
 function paddingStyle(p: Padding): React.CSSProperties {
@@ -237,12 +238,17 @@ interface BlockRendererProps {
 }
 
 export function BlockRenderer({ block, isSelected, onClick, isEditing, onEditContent }: BlockRendererProps) {
+    const canManageLocks = useCanManageLocks();
     if (block.hidden) return null;
 
     // For button blocks, backgroundColor is the button color, not the wrapper bg
     const wrapperBg = block.type === "button"
         ? undefined
         : block.backgroundColor === "transparent" ? undefined : block.backgroundColor;
+
+    // Restricted editors can't edit locked blocks — no inline editing, no upload placeholder.
+    const lockedReadonly = !!block.locked && !canManageLocks;
+    const effectiveEditing = isEditing && !lockedReadonly;
 
     const wrapperStyle: React.CSSProperties = {
         ...paddingStyle(block.padding),
@@ -255,7 +261,50 @@ export function BlockRenderer({ block, isSelected, onClick, isEditing, onEditCon
 
     return (
         <div style={wrapperStyle} onClick={(e) => { e.stopPropagation(); onClick?.(); }}>
-            {renderBlock(block, isEditing, onEditContent)}
+            {block.locked && isEditing && <LockBadge bg={block.backgroundColor} />}
+            {renderBlock(block, effectiveEditing, effectiveEditing ? onEditContent : undefined)}
+        </div>
+    );
+}
+
+/** Pick a color (near-black or white) that contrasts with a background color. */
+function contrastColor(bg?: string): string {
+    const hex = bg && bg !== "transparent" ? bg.trim() : "#ffffff";
+    const m = /^#?([0-9a-fA-F]{6})$/.exec(hex);
+    if (!m) return "#111827";
+    const n = parseInt(m[1], 16);
+    const lum = (0.299 * ((n >> 16) & 255) + 0.587 * ((n >> 8) & 255) + 0.114 * (n & 255)) / 255;
+    return lum > 0.55 ? "#111827" : "#ffffff";
+}
+
+/**
+ * Lock indicator on a locked block. Its colors derive from the block's background
+ * so it stays visible regardless of the background — it can't be camouflaged by
+ * changing colors (and a restricted editor can't change a locked block anyway).
+ */
+function LockBadge({ bg }: { bg?: string }) {
+    const pill = contrastColor(bg); // contrasts with the block background
+    const icon = contrastColor(pill); // contrasts with the pill
+    return (
+        <div
+            title="Locked"
+            style={{
+                position: "absolute",
+                top: 4,
+                right: 4,
+                zIndex: 20,
+                display: "inline-flex",
+                alignItems: "center",
+                justifyContent: "center",
+                width: 20,
+                height: 20,
+                borderRadius: 9999,
+                backgroundColor: pill,
+                color: icon,
+                pointerEvents: "none",
+            }}
+        >
+            <Lock style={{ width: 12, height: 12 }} />
         </div>
     );
 }
