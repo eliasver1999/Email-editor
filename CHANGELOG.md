@@ -11,6 +11,11 @@ include breaking changes.
 
 - **Multi-language templates**: pass `<EmailBuilder locales={[{code,label}]} />` to edit a separate design per language with a toolbar switcher. Languages are fully independent designs; a **"Copy to all languages"** action (⋯ More menu) clones the active design onto the others. `onSave` gains an optional third arg (`MultiLocaleSaveMeta`) with every language's document + rendered HTML. Seed with `initialDocuments` / `defaultLocale`. Single-language usage is unchanged.
 
+### Changed
+
+- **Button width** is now an **auto / percentage** control (10–100%), like Image and Divider — instead of just an on/off "Full Width" toggle. `ButtonBlock.fullWidth` is deprecated in favor of `width: "auto" | number`; existing documents still render (a saved `fullWidth: true` → 100%, `false` → auto).
+- Internal: the email `<head>` and the live canvas now share one `EMAIL_BASE_RESET_CSS` block, so a Custom HTML block renders identically in Edit and Preview.
+
 ## [0.2.0] - 2026-06-26
 
 ### Added

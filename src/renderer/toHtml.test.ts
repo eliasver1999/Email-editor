@@ -47,6 +47,33 @@ describe("renderToHtml", () => {
         expect(html).toContain("Your headline goes here");
     });
 
+    describe("button width", () => {
+        // Assertions match the exact `widthAttr` prefix on the button's <a> so they
+        // can't be satisfied by the container table (which also has `width:100%;`).
+        it("defaults to auto — content-sized inline-block, no width on the button", () => {
+            const html = renderToHtml(makeDoc([createButtonBlock()]));
+            expect(html).toContain("display:inline-block;background-color:");
+            expect(html).not.toContain("display:inline-block;width:");
+        });
+
+        it("renders a percentage width when set", () => {
+            const html = renderToHtml(makeDoc([{ ...createButtonBlock(), width: 50 }]));
+            expect(html).toContain("display:inline-block;width:50%;box-sizing:border-box;");
+        });
+
+        it("treats width:100 as full width", () => {
+            const html = renderToHtml(makeDoc([{ ...createButtonBlock(), width: 100 }]));
+            expect(html).toContain("display:inline-block;width:100%;box-sizing:border-box;");
+        });
+
+        it("honors the legacy `fullWidth` flag on pre-0.3 documents (no `width`)", () => {
+            const legacy = { ...createButtonBlock(), fullWidth: true } as Record<string, unknown>;
+            delete legacy.width;
+            const html = renderToHtml(makeDoc([legacy as unknown as EmailBlock]));
+            expect(html).toContain("display:inline-block;width:100%;box-sizing:border-box;");
+        });
+    });
+
     describe("responsive", () => {
         it("includes the mobile media query, fluid container, and column-stacking classes", () => {
             const html = renderToHtml(makeDoc([createBlock("columns")]));

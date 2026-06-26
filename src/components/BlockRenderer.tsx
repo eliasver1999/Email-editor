@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
-import { EmailBlock, CustomBlock, Padding } from "../types";
+import { EmailBlock, CustomBlock, Padding, resolveButtonWidth } from "../types";
 import type { BlockDefinition } from "../renderer/toHtml";
+import { EMAIL_BASE_RESET_CSS } from "../renderer/toHtml";
 import {
     Type,
     Heading,
@@ -414,13 +415,16 @@ function renderBlock(
                 </div>
             );
 
-        case "button":
+        case "button": {
+            const btnWidth = resolveButtonWidth(block);
             return (
                 <div style={{ textAlign: block.align }}>
                     <a
                         href={isEditing ? undefined : block.href}
                         style={{
-                            display: block.fullWidth ? "block" : "inline-block",
+                            display: "inline-block",
+                            width: btnWidth === "auto" ? undefined : `${btnWidth}%`,
+                            boxSizing: btnWidth === "auto" ? undefined : "border-box",
                             backgroundColor: block.backgroundColor,
                             color: block.color,
                             fontSize: `${block.fontSize}px`,
@@ -437,6 +441,7 @@ function renderBlock(
                     </a>
                 </div>
             );
+        }
 
         case "divider":
             return (
@@ -648,7 +653,9 @@ function ShadowHtml({ html }: { html: string }) {
         const host = hostRef.current;
         if (!host) return;
         if (!shadowRef.current) shadowRef.current = host.attachShadow({ mode: "open" });
-        shadowRef.current.innerHTML = html;
+        // Mirror the email's base reset (esp. table border-collapse) so the block
+        // renders the same here as in the exported email / Preview.
+        shadowRef.current.innerHTML = `<style>${EMAIL_BASE_RESET_CSS}</style>` + html;
     }, [html]);
     return <div ref={hostRef} />;
 }

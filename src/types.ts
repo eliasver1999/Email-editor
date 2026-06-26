@@ -88,7 +88,17 @@ export interface ButtonBlock extends BaseBlock {
     fontFamily: string;
     borderRadius: number;
     align: "left" | "center" | "right";
-    fullWidth: boolean;
+    /** "auto" = sized to its text; a number = percentage of the content width (100 = full width). */
+    width: "auto" | number;
+    /** @deprecated Use `width` ("auto" / 100). Kept so pre-0.3 saved documents still render. */
+    fullWidth?: boolean;
+}
+
+/** A button's effective width, falling back to the legacy `fullWidth` flag for old documents. */
+export function resolveButtonWidth(block: ButtonBlock): "auto" | number {
+    const w = block.width as "auto" | number | undefined;
+    if (w !== undefined) return w;
+    return block.fullWidth ? 100 : "auto";
 }
 
 export interface DividerBlock extends BaseBlock {

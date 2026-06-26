@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import { EmailBlock, CustomBlock, Padding, TextBlock, HeadingBlock, ImageBlock, ButtonBlock, DividerBlock, SpacerBlock, SocialBlock, HtmlBlock, LogoBlock, FooterBlock, QuoteBlock, ColumnsBlock, ColumnConfig, EmailSettings, MergeFieldGroup, BorderStyle, DEFAULT_BORDER } from "../types";
+import { EmailBlock, CustomBlock, Padding, TextBlock, HeadingBlock, ImageBlock, ButtonBlock, DividerBlock, SpacerBlock, SocialBlock, HtmlBlock, LogoBlock, FooterBlock, QuoteBlock, ColumnsBlock, ColumnConfig, EmailSettings, MergeFieldGroup, BorderStyle, DEFAULT_BORDER, resolveButtonWidth } from "../types";
 import { Input, Label, Button, Slider, ScrollArea, Separator, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Popover, PopoverContent, PopoverTrigger, Tabs, TabsList, TabsTrigger, TabsContent } from "../ui/primitives";
 import { CodeEditor } from "../ui/CodeEditor";
 import { useTr } from "../i18n";
@@ -341,6 +341,7 @@ function ImageProps({ block, update }: { block: ImageBlock; update: (u: Partial<
 
 function ButtonProps({ block, update }: { block: ButtonBlock; update: (u: Partial<ButtonBlock>) => void }) {
     const tr = useTr();
+    const btnWidth = resolveButtonWidth(block);
     return (
         <div className="space-y-3">
             <div>
@@ -357,9 +358,12 @@ function ButtonProps({ block, update }: { block: ButtonBlock; update: (u: Partia
             <SliderField label={tr("emailBuilder.prop.borderRadius", "Border Radius")} value={block.borderRadius} min={0} max={50} onChange={(v) => update({ borderRadius: v })} suffix="px" />
             <AlignSelect value={block.align} onChange={(v) => update({ align: v })} />
             <div className="flex items-center gap-2">
-                <input type="checkbox" id="fullWidth" checked={block.fullWidth} onChange={(e) => update({ fullWidth: e.target.checked })} className="rounded" />
-                <Label htmlFor="fullWidth" className="text-xs">{tr("emailBuilder.prop.fullWidth", "Full Width")}</Label>
+                <input type="checkbox" id="btn-auto-width" checked={btnWidth === "auto"} onChange={(e) => update({ width: e.target.checked ? "auto" : 100, fullWidth: undefined })} className="rounded" />
+                <Label htmlFor="btn-auto-width" className="text-xs">{tr("emailBuilder.prop.autoWidth", "Auto width (fit text)")}</Label>
             </div>
+            {btnWidth !== "auto" && (
+                <SliderField label={tr("emailBuilder.prop.width", "Width")} value={btnWidth} min={10} max={100} onChange={(v) => update({ width: v, fullWidth: undefined })} suffix="%" />
+            )}
         </div>
     );
 }

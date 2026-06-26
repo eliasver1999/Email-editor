@@ -3,6 +3,7 @@ import {
     EmailSettings,
     Padding,
     DEFAULT_BORDER,
+    resolveButtonWidth,
     AnyBlock,
     CustomBlock,
     TextBlock,
@@ -34,6 +35,18 @@ const SOCIAL_ICON: Record<string, string> = {
     tiktok: "https://img.icons8.com/color/96/tiktok.png",
     website: "https://img.icons8.com/color/96/domain.png",
 };
+
+/**
+ * Base reset rules shared by the rendered email (`<head>`) and the live canvas's
+ * HTML-block shadow root, so a Custom HTML block looks the same in Edit and
+ * Preview. Kept minimal + email-safe — `table { border-collapse: collapse;
+ * border-spacing: 0 }` in particular is what keeps table-based snippets (e.g. a
+ * legacy button) from rendering wider in one view than the other.
+ */
+export const EMAIL_BASE_RESET_CSS = `body { margin: 0; padding: 0; -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
+table { border-spacing: 0; border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt; }
+img { border: 0; height: auto; line-height: 100%; outline: none; text-decoration: none; -ms-interpolation-mode: bicubic; }
+p { margin: 0 0 10px 0; }`;
 
 /**
  * Renders an EmailDocument to a self-contained HTML string
@@ -80,11 +93,8 @@ export function renderToHtml(doc: { settings: EmailSettings; blocks: AnyBlock[] 
 </noscript>
 <![endif]-->
 <style>
-  body { margin: 0; padding: 0; -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
-  table { border-spacing: 0; border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt; }
-  img { border: 0; height: auto; line-height: 100%; outline: none; text-decoration: none; -ms-interpolation-mode: bicubic; }
+${EMAIL_BASE_RESET_CSS}
   a { color: ${settings.linkColor}; }
-  p { margin: 0 0 10px 0; }
   /* Responsive: on phones, let the email fill the screen and stack columns. */
   @media only screen and (max-width: 600px) {
     .eb-container { width: 100% !important; }
@@ -252,9 +262,11 @@ const BUILTIN_RENDERERS: BlockRenderer[] = [
     defineBlock<ButtonBlock>({
         type: "button",
         toHtml: (block, ctx) => {
-            // box-sizing so width:100% INCLUDES the padding (otherwise the button is
-            // 100% + 56px and overflows the content width).
-            const widthAttr = block.fullWidth ? `width:100%;display:block;box-sizing:border-box;` : `display:inline-block;`;
+            // box-sizing so the % width INCLUDES the padding (otherwise a 100% button
+            // is 100% + 56px and overflows the content width). `text-align` on the
+            // wrapping div positions a sub-100% button (left/center/right).
+            const w = resolveButtonWidth(block);
+            const widthAttr = w === "auto" ? `display:inline-block;` : `display:inline-block;width:${w}%;box-sizing:border-box;`;
             return ctx.wrapRow(
                 `<div style="text-align:${block.align};">` +
                 `<!--[if mso]><v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="${ctx.escapeHtml(block.href)}" style="height:auto;v-text-anchor:middle;${widthAttr}" arcsize="${Math.round(block.borderRadius / 40 * 100)}%" stroke="f" fillcolor="${block.backgroundColor}"><w:anchorlock/><center><![endif]-->` +

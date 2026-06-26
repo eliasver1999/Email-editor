@@ -116,7 +116,7 @@ export function createButtonBlock(): ButtonBlock {
         fontFamily: "Arial, sans-serif",
         borderRadius: 6,
         align: "center",
-        fullWidth: false,
+        width: "auto",
         padding: { top: 15, right: 20, bottom: 15, left: 20 },
     };
 }
