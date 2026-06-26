@@ -7,18 +7,27 @@ include breaking changes.
 
 ## [Unreleased]
 
-### Added
-
-- **Multi-language templates**: pass `<EmailBuilder locales={[{code,label}]} />` to edit a separate design per language with a toolbar switcher. Languages are fully independent designs; a **"Copy to all languages"** action (⋯ More menu) clones the active design onto the others. `onSave` gains an optional third arg (`MultiLocaleSaveMeta`) with every language's document + rendered HTML. Seed with `initialDocuments` / `defaultLocale`. Single-language usage is unchanged.
+## [0.4.0] - 2026-06-26
 
 ### Changed
 
-- **Button width** is now an **auto / percentage** control (10–100%), like Image and Divider — instead of just an on/off "Full Width" toggle. `ButtonBlock.fullWidth` is deprecated in favor of `width: "auto" | number`; existing documents still render (a saved `fullWidth: true` → 100%, `false` → auto).
+- **Button width** is now an **auto / percentage** control (10–100%), like Image and Divider — instead of just an on/off "Full Width" toggle. **Breaking (types):** `ButtonBlock.fullWidth` is deprecated and replaced by `width: "auto" | number`. Saved documents still render unchanged (a stored `fullWidth: true` → 100%, `false` → auto), but TypeScript that builds a `ButtonBlock` literal should now set `width`.
 - Internal: the email `<head>` and the live canvas now share one `EMAIL_BASE_RESET_CSS` block, so a Custom HTML block renders identically in Edit and Preview.
 
 ### Fixed
 
 - **Button row no longer bleeds the button color full-width** in the exported email. The button's row stays transparent (only the button itself is colored), so a button — especially a full-width one — looks the same in Edit and Preview. Previously the renderer painted the whole row with the button color while the canvas didn't.
+- **Desktop preview width now matches the edit canvas** (uses `settings.contentWidth`), so the email no longer shifts or resizes when toggling Edit ↔ Preview.
+
+## [0.3.1] - 2026-06-26
+
+- Maintenance republish of 0.3.0; no functional changes.
+
+## [0.3.0] - 2026-06-26
+
+### Added
+
+- **Multi-language templates**: pass `<EmailBuilder locales={[{code,label}]} />` to edit a separate design per language with a toolbar switcher. Languages are fully independent designs; a **"Copy to all languages"** action (⋯ More menu) clones the active design onto the others. `onSave` gains an optional third arg (`MultiLocaleSaveMeta`) with every language's document + rendered HTML. Seed with `initialDocuments` / `defaultLocale`. Single-language usage is unchanged.
 
 ## [0.2.0] - 2026-06-26
 
