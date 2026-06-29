@@ -7,6 +7,8 @@ include breaking changes.
 
 ## [Unreleased]
 
+## [0.4.2] - 2026-06-26
+
 ### Fixed
 
 - **Code editors no longer collapse to a 5px sliver.** Monaco could measure its container as ~0 when mounted inside a tab/panel that sizes after creation and never recover — leaving the Custom HTML block's HTML/CSS editors and the document Custom CSS editor effectively uneditable. They now force a relayout once the box has real size (and on resize).
@@ -94,7 +96,8 @@ Initial public release.
 - No dark-mode handling or plain-text / multipart alternative yet.
 - Generated HTML has not been validated across the full email-client matrix — smoke-test your own templates (see the README).
 
-[Unreleased]: https://github.com/eliasver1999/Email-editor/compare/v0.4.1...HEAD
+[Unreleased]: https://github.com/eliasver1999/Email-editor/compare/v0.4.2...HEAD
+[0.4.2]: https://github.com/eliasver1999/Email-editor/compare/v0.4.1...v0.4.2
 [0.4.1]: https://github.com/eliasver1999/Email-editor/compare/v0.4.0...v0.4.1
 [0.4.0]: https://github.com/eliasver1999/Email-editor/compare/v0.3.1...v0.4.0
 [0.3.1]: https://github.com/eliasver1999/Email-editor/compare/v0.3.0...v0.3.1
