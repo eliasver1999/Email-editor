@@ -330,3 +330,47 @@ export function usePopoverClose() {
     const ctx = useContext(PopoverContext);
     return () => ctx?.setOpen(false);
 }
+
+// ============================================================
+// DIALOG (modal)
+// ============================================================
+
+/**
+ * A centered modal over a dimmed backdrop. Closes on Escape or backdrop click.
+ * Renders nothing when `open` is false. Compose the title/body/buttons as children.
+ */
+export function Dialog({ open, onClose, children, className }: {
+    open: boolean;
+    onClose: () => void;
+    children: React.ReactNode;
+    className?: string;
+}) {
+    useEffect(() => {
+        if (!open) return;
+        const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
+        window.document.addEventListener("keydown", onKey);
+        return () => window.document.removeEventListener("keydown", onKey);
+    }, [open, onClose]);
+
+    if (!open) return null;
+    // Layout (position/size/centering/backdrop) is inline so the modal renders
+    // correctly regardless of which Tailwind utilities a consumer's build emits;
+    // classes are used only for theme colors/shape (which the package always ships).
+    return (
+        <div style={{ position: "fixed", inset: 0, zIndex: 50, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
+            <div
+                onClick={onClose}
+                className="animate-in fade-in-0"
+                style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.45)" }}
+            />
+            <div
+                role="dialog"
+                aria-modal="true"
+                style={{ position: "relative", zIndex: 10, width: "100%", maxWidth: 384, padding: 20 }}
+                className={cn("rounded-lg border bg-card text-card-foreground shadow-xl animate-in fade-in-0 zoom-in-95", className)}
+            >
+                {children}
+            </div>
+        </div>
+    );
+}

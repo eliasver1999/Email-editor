@@ -11,7 +11,7 @@ import {
     pointerWithin,
     rectIntersection,
 } from "@dnd-kit/core";
-import { Button, Tabs, TabsContent, TabsList, TabsTrigger, Popover, PopoverContent, PopoverTrigger, usePopoverClose } from "./ui/primitives";
+import { Button, Tabs, TabsContent, TabsList, TabsTrigger, Popover, PopoverContent, PopoverTrigger, usePopoverClose, Dialog } from "./ui/primitives";
 import {
     Eye,
     Code,
@@ -225,6 +225,8 @@ export function EmailBuilder({ initialDocument, locales, initialDocuments, defau
     const [viewMode, setViewMode] = useState<"edit" | "preview" | "code">("edit");
     const [previewWidth, setPreviewWidth] = useState<"desktop" | "mobile">("desktop");
     const [isDirty, setIsDirty] = useState(false);
+    // Open when the user clicks Back with unsaved changes (in-app confirm dialog).
+    const [confirmLeaveOpen, setConfirmLeaveOpen] = useState(false);
     const [isDragging, setIsDragging] = useState(false);
     // What's currently being dragged — drives the floating DragOverlay preview.
     const [activeDrag, setActiveDrag] = useState<{ kind: "catalog" | "reorder"; label: string } | null>(null);
@@ -658,6 +660,26 @@ export function EmailBuilder({ initialDocument, locales, initialDocuments, defau
         toast({ title: "Saved" });
     }, [document, onSave, toast, customBlocks, isMultiLocale, localeDocs, activeLocale]);
 
+    // Back button: confirm in-app (styled dialog) when there are unsaved changes,
+    // instead of leaving silently. The browser's own beforeunload prompt still
+    // covers hard tab-close / refresh (see useUnsavedChanges).
+    const requestBack = useCallback(() => {
+        if (!onBack) return;
+        if (isDirty) setConfirmLeaveOpen(true);
+        else onBack();
+    }, [onBack, isDirty]);
+
+    const saveAndLeave = useCallback(async () => {
+        await handleSave();
+        setConfirmLeaveOpen(false);
+        onBack?.();
+    }, [handleSave, onBack]);
+
+    const leaveWithoutSaving = useCallback(() => {
+        setConfirmLeaveOpen(false);
+        onBack?.();
+    }, [onBack]);
+
     // --- Computed ---
 
     const activeLocaleLabel = useMemo(
@@ -788,7 +810,7 @@ export function EmailBuilder({ initialDocument, locales, initialDocuments, defau
                 <div className="flex items-center justify-between px-4 py-2 border-b bg-card shrink-0">
                     <div className="flex items-center gap-2">
                         {onBack && (
-                            <Button variant="ghost" size="sm" onClick={onBack}>← {tr("emailBuilder.back", "Back")}</Button>
+                            <Button variant="ghost" size="sm" onClick={requestBack}>← {tr("emailBuilder.back", "Back")}</Button>
                         )}
                         <div className="flex items-center gap-1 border rounded-md p-0.5">
                             <Button
@@ -901,6 +923,15 @@ export function EmailBuilder({ initialDocument, locales, initialDocuments, defau
                             {tr("emailBuilder.settingsShort", "Settings")}
                         </Button>
                         <div className="w-px h-5 bg-border mx-1" />
+                        {isDirty && (
+                            <span
+                                className="flex items-center gap-1.5 text-[11px] text-muted-foreground mr-1"
+                                title={tr("emailBuilder.unsavedChanges", "You have unsaved changes")}
+                            >
+                                <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
+                                {tr("emailBuilder.unsaved", "Unsaved")}
+                            </span>
+                        )}
                         <Button size="sm" className="h-7 bg-primary gap-1" onClick={handleSave}>
                             Save
                         </Button>
@@ -1029,6 +1060,25 @@ export function EmailBuilder({ initialDocument, locales, initialDocuments, defau
                 {activeDrag ? <DragPreview kind={activeDrag.kind} label={activeDrag.label} /> : null}
             </DragOverlay>
         </DndContext>
+
+        {/* Unsaved-changes confirmation when leaving via Back. */}
+        <Dialog open={confirmLeaveOpen} onClose={() => setConfirmLeaveOpen(false)}>
+            <h2 className="text-sm font-semibold">{tr("emailBuilder.unsavedTitle", "Unsaved changes")}</h2>
+            <p className="mt-1.5 text-sm text-muted-foreground">
+                {tr("emailBuilder.unsavedBody", "You have unsaved changes. Save them before leaving?")}
+            </p>
+            <div className="mt-4 flex justify-end gap-2">
+                <Button variant="ghost" size="sm" onClick={() => setConfirmLeaveOpen(false)}>
+                    {tr("emailBuilder.cancel", "Cancel")}
+                </Button>
+                <Button variant="outline" size="sm" style={{ color: "#dc2626" }} onClick={leaveWithoutSaving}>
+                    {tr("emailBuilder.leaveWithoutSaving", "Leave without saving")}
+                </Button>
+                <Button size="sm" className="bg-primary" onClick={saveAndLeave}>
+                    {tr("emailBuilder.saveAndLeave", "Save & leave")}
+                </Button>
+            </div>
+        </Dialog>
         </div>
         </CustomBlocksContext.Provider>
         </LockingContext.Provider>

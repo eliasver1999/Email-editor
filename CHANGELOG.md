@@ -7,6 +7,10 @@ include breaking changes.
 
 ## [Unreleased]
 
+### Added
+
+- **In-app unsaved-changes guard.** The toolbar now shows an "Unsaved" indicator (amber dot) while there are pending edits, and clicking **Back** with unsaved changes opens a styled confirmation dialog — **Cancel** / **Leave without saving** / **Save & leave** — instead of navigating away silently. The browser's native prompt still guards hard tab-close / refresh. Backed by a new `Dialog` modal primitive.
+
 ## [0.4.2] - 2026-06-26
 
 ### Fixed
