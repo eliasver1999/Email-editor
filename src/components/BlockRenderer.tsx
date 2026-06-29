@@ -53,6 +53,7 @@ function EditableContent({
     allowLists = true,
     onCommit,
     style,
+    as,
 }: {
     value: string;
     editing: boolean;
@@ -61,8 +62,10 @@ function EditableContent({
     allowLists?: boolean;
     onCommit: (next: string) => void;
     style?: React.CSSProperties;
+    /** Semantic tag to render (e.g. "h1") so the canvas matches the exported email and Custom CSS selectors apply. Defaults to "div". */
+    as?: keyof React.JSX.IntrinsicElements;
 }) {
-    const ref = useRef<HTMLDivElement>(null);
+    const ref = useRef<HTMLElement>(null);
     const [focused, setFocused] = useState(false);
     useEffect(() => {
         const el = ref.current;
@@ -76,10 +79,12 @@ function EditableContent({
 
     // Commit on input as well as blur so a click straight to "Save" (which
     // blurs only after its own click handler) never drops the latest edit.
-    const commit = (el: HTMLDivElement) => {
+    const commit = (el: HTMLElement) => {
         const next = plainText ? el.textContent ?? "" : el.innerHTML;
         if (next !== value) onCommit(next);
     };
+
+    const Tag = (as ?? "div") as React.ElementType;
 
     // Rich (non-plainText) blocks get a formatting toolbar while focused. Its
     // buttons preventDefault on mousedown so the caret/selection stays here, so
@@ -89,15 +94,15 @@ function EditableContent({
             {editing && !plainText && focused && (
                 <RichTextToolbar targetRef={ref} allowLists={allowLists} onChanged={() => ref.current && commit(ref.current)} />
             )}
-            <div
+            <Tag
                 ref={ref}
                 contentEditable={editing}
                 suppressContentEditableWarning
                 spellCheck={false}
                 style={{ ...style, outline: "none", cursor: editing ? "text" : undefined }}
                 onFocus={() => setFocused(true)}
-                onInput={(e) => commit(e.currentTarget)}
-                onBlur={(e) => { setFocused(false); commit(e.currentTarget); }}
+                onInput={(e: React.FormEvent<HTMLElement>) => commit(e.currentTarget)}
+                onBlur={(e: React.FocusEvent<HTMLElement>) => { setFocused(false); commit(e.currentTarget); }}
             />
         </div>
     );
@@ -135,7 +140,7 @@ function ToolbarButton({ label, active, onAction, children }: {
  * (e.g. <b>, <i>, <a>, <ul>) is what the renderer ships to the email.
  */
 function RichTextToolbar({ targetRef, onChanged, allowLists = true }: {
-    targetRef: React.RefObject<HTMLDivElement | null>;
+    targetRef: React.RefObject<HTMLElement | null>;
     onChanged: () => void;
     allowLists?: boolean;
 }) {
@@ -373,6 +378,7 @@ function renderBlock(
                         allowLists={false}
                         onCommit={(v) => onEditContent!(v)}
                         style={headingStyle}
+                        as={Tag}
                     />
                 );
             }

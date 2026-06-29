@@ -7,6 +7,15 @@ include breaking changes.
 
 ## [Unreleased]
 
+### Fixed
+
+- **Code editors no longer collapse to a 5px sliver.** Monaco could measure its container as ~0 when mounted inside a tab/panel that sizes after creation and never recover — leaving the Custom HTML block's HTML/CSS editors and the document Custom CSS editor effectively uneditable. They now force a relayout once the box has real size (and on resize).
+- **Document Custom CSS is now applied in the live editing canvas**, scoped to the content area (it previously showed only in Preview/export). Editing is WYSIWYG — Custom CSS affects the canvas the same way it affects the exported email, without leaking into the editor chrome.
+
+### Changed
+
+- The **heading block renders its semantic tag** (`h1`/`h2`/`h3`) while editing on the canvas, matching the exported email, so Custom CSS selectors like `h1 { … }` apply on the canvas too.
+
 ## [0.4.1] - 2026-06-26
 
 ### Fixed

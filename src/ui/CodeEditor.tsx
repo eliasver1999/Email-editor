@@ -61,13 +61,21 @@ export function CodeEditor({ value, onChange, language, height = 240, readOnly, 
     // correctly, just like the fixed-height case).
     const fill = typeof height !== "number";
     const wrapperRef = useRef<HTMLDivElement>(null);
+    const editorRef = useRef<{ layout: () => void } | null>(null);
     const [measured, setMeasured] = useState(0);
 
+    // Monaco can measure its container as ~0 at creation (it's often mounted
+    // inside a tab/panel that hasn't laid out yet), render at its initial 5px,
+    // and never recover because automaticLayout sees no later size *change*.
+    // Observe the wrapper ourselves and force a relayout once it has real size —
+    // for every case, not just percentage heights.
     useEffect(() => {
-        if (!fill) return;
         const el = wrapperRef.current;
         if (!el) return;
-        const update = () => setMeasured(el.clientHeight);
+        const update = () => {
+            if (fill) setMeasured(el.clientHeight);
+            editorRef.current?.layout();
+        };
         update();
         const ro = new ResizeObserver(update);
         ro.observe(el);
@@ -86,7 +94,13 @@ export function CodeEditor({ value, onChange, language, height = 240, readOnly, 
                         language={language}
                         value={value}
                         onChange={onChange ? (v) => onChange(v ?? "") : undefined}
-                        onMount={(editor) => requestAnimationFrame(() => editor.layout())}
+                        onMount={(editor) => {
+                            editorRef.current = editor;
+                            // The container may still be sizing when Monaco mounts; nudge a
+                            // relayout across a few frames so it fills its box instead of
+                            // sticking at the initial 5px.
+                            [0, 60, 200].forEach((d) => setTimeout(() => editor.layout(), d));
+                        }}
                         theme={isDark() ? "vs-dark" : "light"}
                         options={{
                             readOnly: readOnly || !onChange,

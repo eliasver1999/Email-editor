@@ -224,6 +224,42 @@ function ColumnDropZone({
     );
 }
 
+/**
+ * Prefix every top-level selector in `css` with `scopeSel`, so the document's
+ * Custom CSS styles only the canvas content area — not the editor chrome (which
+ * lives in the same document). Best-effort: plain rules and nested at-rules
+ * (@media/@supports/@container) are scoped; @keyframes/@font-face/@import pass
+ * through untouched. The exported email applies this CSS globally (it owns the
+ * whole document); here we scope it so editing stays WYSIWYG without bleeding.
+ */
+function scopeCss(css: string, scopeSel: string): string {
+    const src = css.replace(/\/\*[\s\S]*?\*\//g, "").trim();
+    let out = "";
+    let i = 0;
+    while (i < src.length) {
+        const open = src.indexOf("{", i);
+        if (open === -1) break;
+        const prelude = src.slice(i, open).trim();
+        let depth = 1;
+        let j = open + 1;
+        for (; j < src.length && depth > 0; j++) {
+            if (src[j] === "{") depth++;
+            else if (src[j] === "}") depth--;
+        }
+        const body = src.slice(open + 1, j - 1);
+        if (prelude.startsWith("@")) {
+            const at = prelude.slice(1).split(/[\s(]/)[0].toLowerCase();
+            out += at === "media" || at === "supports" || at === "container"
+                ? `${prelude}{${scopeCss(body, scopeSel)}}`
+                : `${prelude}{${body}}`;
+        } else if (prelude) {
+            out += `${prelude.split(",").map((s) => `${scopeSel} ${s.trim()}`).join(",")}{${body}}`;
+        }
+        i = j;
+    }
+    return out;
+}
+
 export function Canvas({ blocks, settings, selectedBlockId, onSelectBlock, isPreview, isDragging, shadow, onEditContent }: CanvasProps) {
     const tr = useTr();
     const { setNodeRef: setCanvasRef, isOver: isCanvasOver } = useDroppable({
@@ -240,7 +276,7 @@ export function Canvas({ blocks, settings, selectedBlockId, onSelectBlock, isPre
             }}
         >
             <div
-                className={cn("mx-auto my-6 flex flex-col", shadow && "shadow-lg")}
+                className={cn("eb-content-css mx-auto my-6 flex flex-col", shadow && "shadow-lg")}
                 style={{
                     maxWidth: `${settings.contentWidth}px`,
                     backgroundColor: settings.contentBackgroundColor,
@@ -253,6 +289,11 @@ export function Canvas({ blocks, settings, selectedBlockId, onSelectBlock, isPre
                     borderRadius: settings.contentBorder && settings.contentBorder.radius > 0 ? settings.contentBorder.radius : undefined,
                 }}
             >
+                {/* Document Custom CSS, scoped to the canvas content so editing is
+                    WYSIWYG (the exported email applies the same CSS globally). */}
+                {settings.customCss && settings.customCss.trim() ? (
+                    <style dangerouslySetInnerHTML={{ __html: scopeCss(settings.customCss, ".eb-content-css") }} />
+                ) : null}
                 {blocks.length === 0 ? (
                     <div
                         ref={setCanvasRef}
