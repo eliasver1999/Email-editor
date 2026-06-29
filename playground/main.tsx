@@ -45,67 +45,97 @@ const NPM_URL = "https://www.npmjs.com/package/email-block-builder";
 const GH_URL = "https://github.com/eliasver1999/Email-editor";
 const INSTALL_CMD = "npm i email-block-builder";
 
-const linkStyle: CSSProperties = {
-    display: "inline-flex",
-    alignItems: "center",
-    fontSize: 13,
-    fontWeight: 600,
-    textDecoration: "none",
-    color: "#111827",
-    background: "#fff",
-    border: "1px solid #e5e7eb",
-    borderRadius: 8,
-    padding: "7px 12px",
-};
+const FONT = "ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif";
+const MONO = "ui-monospace, SFMono-Regular, Menlo, Consolas, monospace";
 
-/** Small landing header shown above the editor on the hosted demo. */
-function Landing() {
+const FEATURES = ["📤 Email-safe HTML", "🪟 Outlook-ready", "🌍 Multi-language", "🧱 Custom blocks", "🎨 Themeable", "📱 Responsive", "🖼️ Image upload"];
+
+const navLink: CSSProperties = { fontSize: 14, fontWeight: 600, color: "#0f172a", textDecoration: "none" };
+const btnPrimary: CSSProperties = { display: "inline-flex", alignItems: "center", gap: 6, fontSize: 14, fontWeight: 700, textDecoration: "none", color: "#fff", background: "#16a34a", border: "1px solid #16a34a", borderRadius: 10, padding: "10px 18px" };
+const btnGhost: CSSProperties = { ...btnPrimary, color: "#0f172a", background: "#fff", border: "1px solid #e2e8f0" };
+const chip: CSSProperties = { fontSize: 12.5, fontWeight: 500, color: "#334155", background: "#fff", border: "1px solid #e2e8f0", borderRadius: 999, padding: "6px 12px" };
+
+/** Copyable `npm i …` pill — the hero centerpiece. */
+function InstallPill() {
     const [copied, setCopied] = useState(false);
-    const copy = () => {
+    const copy = () =>
         navigator.clipboard?.writeText(INSTALL_CMD).then(() => {
             setCopied(true);
             setTimeout(() => setCopied(false), 1500);
         });
-    };
     return (
-        <header
+        <button
+            onClick={copy}
+            title="Copy install command"
             style={{
-                fontFamily: "ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif",
-                borderBottom: "1px solid #e5e7eb",
-                background: "#fff",
-                padding: "12px 20px",
+                display: "inline-flex", alignItems: "center", gap: 14, cursor: "pointer",
+                fontFamily: MONO, fontSize: 14, color: "#e2e8f0", background: "#0f172a",
+                border: "1px solid #0f172a", borderRadius: 10, padding: "11px 16px",
             }}
         >
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, flexWrap: "wrap", maxWidth: 1240, margin: "0 auto" }}>
-                <div style={{ minWidth: 0 }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                        <span style={{ fontSize: 20 }} aria-hidden>✉️</span>
-                        <h1 style={{ margin: 0, fontSize: 18, fontWeight: 800, color: "#111827", letterSpacing: "-0.01em" }}>email-block-builder</h1>
-                        <span style={{ fontSize: 11, fontWeight: 700, color: "#16a34a", background: "#dcfce7", borderRadius: 999, padding: "2px 8px" }}>live demo</span>
-                    </div>
-                    <p style={{ margin: "4px 0 0", fontSize: 13, color: "#6b7280" }}>
-                        Drag-and-drop email builder for React — multi-language, custom blocks, themeable, exports email-safe HTML.
-                    </p>
+            <span><span style={{ color: "#22c55e" }}>$</span> {INSTALL_CMD}</span>
+            <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.04em", color: copied ? "#22c55e" : "#94a3b8" }}>{copied ? "COPIED ✓" : "COPY"}</span>
+        </button>
+    );
+}
+
+function Nav() {
+    return (
+        <nav style={{ borderBottom: "1px solid #e5e7eb", background: "#fff" }}>
+            <div style={{ maxWidth: 1200, margin: "0 auto", padding: "12px 20px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <span style={{ fontSize: 18 }} aria-hidden>✉️</span>
+                    <strong style={{ fontSize: 15, color: "#0f172a", letterSpacing: "-0.01em" }}>email-block-builder</strong>
                 </div>
-                <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
-                    <button
-                        onClick={copy}
-                        title="Copy install command"
-                        style={{
-                            display: "inline-flex", alignItems: "center", gap: 8, cursor: "pointer",
-                            fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace", fontSize: 13,
-                            color: "#111827", background: "#f3f4f6", border: "1px solid #e5e7eb", borderRadius: 8, padding: "7px 12px",
-                        }}
-                    >
-                        <span style={{ color: "#16a34a" }}>$</span>
-                        {INSTALL_CMD}
-                        <span style={{ fontSize: 11, color: copied ? "#16a34a" : "#9ca3af" }}>{copied ? "copied ✓" : "copy"}</span>
-                    </button>
-                    <a href={GH_URL} target="_blank" rel="noreferrer" style={linkStyle}>GitHub ↗</a>
-                    <a href={NPM_URL} target="_blank" rel="noreferrer" style={{ ...linkStyle, background: "#16a34a", color: "#fff", borderColor: "#16a34a" }}>npm ↗</a>
+                <div style={{ display: "flex", alignItems: "center", gap: 18 }}>
+                    <a href={GH_URL} target="_blank" rel="noreferrer" style={navLink}>GitHub</a>
+                    <a href={NPM_URL} target="_blank" rel="noreferrer" style={navLink}>npm</a>
                 </div>
             </div>
-        </header>
+        </nav>
+    );
+}
+
+function Hero() {
+    return (
+        <section style={{ background: "linear-gradient(180deg, #ffffff 0%, #f0fdf4 100%)", borderBottom: "1px solid #e5e7eb" }}>
+            <div style={{ maxWidth: 880, margin: "0 auto", padding: "64px 20px 52px", textAlign: "center" }}>
+                <span style={{ display: "inline-block", fontSize: 12, fontWeight: 700, color: "#16a34a", background: "#dcfce7", borderRadius: 999, padding: "5px 12px", letterSpacing: "0.02em" }}>
+                    Open source · MIT · React 18 &amp; 19
+                </span>
+                <h1 style={{ fontSize: "clamp(30px, 5vw, 46px)", fontWeight: 800, lineHeight: 1.1, letterSpacing: "-0.02em", color: "#0f172a", margin: "18px 0 0" }}>
+                    The drag-and-drop email builder for React
+                </h1>
+                <p style={{ fontSize: 18, color: "#475569", lineHeight: 1.6, margin: "16px auto 0", maxWidth: 660 }}>
+                    Compose emails from blocks, preview live, and export <strong style={{ color: "#0f172a" }}>email-safe HTML</strong> that renders everywhere — including Outlook. Multi-language, custom blocks, fully themeable.
+                </p>
+                <div style={{ marginTop: 30, display: "flex", justifyContent: "center" }}>
+                    <InstallPill />
+                </div>
+                <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap", marginTop: 16 }}>
+                    <a href={GH_URL} target="_blank" rel="noreferrer" style={btnGhost}>★ Star on GitHub</a>
+                    <a href={NPM_URL} target="_blank" rel="noreferrer" style={btnPrimary}>View on npm ↗</a>
+                </div>
+                <div style={{ display: "flex", gap: 8, justifyContent: "center", flexWrap: "wrap", marginTop: 30 }}>
+                    {FEATURES.map((f) => <span key={f} style={chip}>{f}</span>)}
+                </div>
+                <p style={{ marginTop: 36, fontSize: 13, color: "#94a3b8" }}>↓ Try the editor below — it's the real component</p>
+            </div>
+        </section>
+    );
+}
+
+function Footer() {
+    const fl: CSSProperties = { color: "#16a34a", textDecoration: "none", fontWeight: 600 };
+    return (
+        <footer style={{ borderTop: "1px solid #e5e7eb", background: "#fff", padding: "22px 20px", textAlign: "center", color: "#94a3b8", fontSize: 13 }}>
+            <span style={{ fontFamily: MONO, color: "#475569" }}>{INSTALL_CMD}</span>
+            {"  ·  "}
+            <a href={GH_URL} target="_blank" rel="noreferrer" style={fl}>GitHub</a>
+            {"  ·  "}
+            <a href={NPM_URL} target="_blank" rel="noreferrer" style={fl}>npm</a>
+            {"  ·  MIT © Ilias Verginis"}
+        </footer>
     );
 }
 
@@ -113,8 +143,17 @@ function App() {
     const [doc, setDoc] = useState<EmailDocument | undefined>();
 
     return (
-        <>
-            <Landing />
+        <div style={{ fontFamily: FONT, background: "#fff" }}>
+            <Nav />
+            <Hero />
+            <section style={{ maxWidth: 1320, margin: "0 auto", padding: "0 16px" }}>
+                <div style={{ padding: "30px 4px 16px" }}>
+                    <h2 style={{ margin: 0, fontSize: 22, fontWeight: 800, color: "#0f172a", letterSpacing: "-0.01em" }}>Live editor</h2>
+                    <p style={{ margin: "6px 0 0", fontSize: 14, color: "#64748b" }}>
+                        Drag blocks from the left, edit on the canvas, switch languages in the toolbar, then open the <strong style={{ color: "#334155" }}>HTML</strong> tab to see the exported email.
+                    </p>
+                </div>
+                <div style={{ border: "1px solid #e5e7eb", borderRadius: 12, overflow: "hidden", boxShadow: "0 12px 32px -14px rgba(15,23,42,0.22)", marginBottom: 44, background: "#fff" }}>
             <EmailBuilder
                 initialDocument={doc}
                 locales={[
@@ -155,11 +194,19 @@ function App() {
                         .replaceAll("{{email}}", "maria@example.com")
                 }
             />
+                </div>
+            </section>
+            <Footer />
             <EmailBuilderToaster />
-        </>
+        </div>
     );
 }
 
 // Note: no <StrictMode> — Monaco's automaticLayout breaks under StrictMode's
 // dev-only double-mount (editor gets stuck at its initial 5px size).
-createRoot(document.getElementById("root")!).render(<App />);
+// Reuse a single root across Vite HMR re-runs of this entry module, otherwise
+// createRoot() is called twice on the same container and React warns.
+const container = document.getElementById("root")!;
+const store = window as unknown as { __ebbRoot?: ReturnType<typeof createRoot> };
+const root = store.__ebbRoot ?? (store.__ebbRoot = createRoot(container));
+root.render(<App />);
