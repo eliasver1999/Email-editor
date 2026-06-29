@@ -7,6 +7,12 @@ include breaking changes.
 
 ## [Unreleased]
 
+## [0.4.1] - 2026-06-26
+
+### Fixed
+
+- Corrected the package's `repository`, `homepage`, and `bugs` URLs to point to the real GitHub repo (`eliasver1999/Email-editor`). The previous URLs (`iliasverginis/email-block-builder`) were wrong, so the npm page linked to a non-existent repository. (No code changes.)
+
 ## [0.4.0] - 2026-06-26
 
 ### Changed
@@ -79,7 +85,8 @@ Initial public release.
 - No dark-mode handling or plain-text / multipart alternative yet.
 - Generated HTML has not been validated across the full email-client matrix — smoke-test your own templates (see the README).
 
-[Unreleased]: https://github.com/eliasver1999/Email-editor/compare/v0.4.0...HEAD
+[Unreleased]: https://github.com/eliasver1999/Email-editor/compare/v0.4.1...HEAD
+[0.4.1]: https://github.com/eliasver1999/Email-editor/compare/v0.4.0...v0.4.1
 [0.4.0]: https://github.com/eliasver1999/Email-editor/compare/v0.3.1...v0.4.0
 [0.3.1]: https://github.com/eliasver1999/Email-editor/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/eliasver1999/Email-editor/compare/v0.2.0...v0.3.0
