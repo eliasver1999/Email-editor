@@ -48,6 +48,8 @@
     "build:css": "postcss src/styles.css -o dist/styles.css --no-map",
     "dev": "tsup --watch",
     "playground": "vite",
+    "build:demo": "vite build --base=/Email-editor/",
+    "preview:demo": "vite preview --base=/Email-editor/",
     "email:sample": "node scripts/render-sample.mjs",
     "test": "vitest run",
     "test:watch": "vitest",

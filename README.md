@@ -2,6 +2,8 @@
 
 A framework-agnostic, drag-and-drop **email builder** for React. Compose emails from blocks (text, image, button, columns, social, …), preview them live, and export **email-safe, table-based HTML** that renders across clients (including Outlook).
 
+**▶ [Live demo](https://eliasver1999.github.io/Email-editor/)** — try the editor in your browser.
+
 - 🧱 **Block-based editor** — drag, drop, reorder, edit inline
 - 🎨 **Themable** — every color is a CSS variable; light/dark out of the box
 - 🌍 **Localizable** — inject your own translations via a single `t` prop

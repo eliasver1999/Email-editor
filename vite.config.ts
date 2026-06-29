@@ -16,4 +16,11 @@ export default defineConfig({
         postcss: here,
     },
     server: { open: true, port: 5180 },
+    build: {
+        // `npm run build:demo` builds this playground as the hosted demo
+        // (GitHub Pages). Output lives outside the playground root so it never
+        // collides with the package's own dist/. Pass --base on the CLI.
+        outDir: resolve(here, "demo-dist"),
+        emptyOutDir: true,
+    },
 });
