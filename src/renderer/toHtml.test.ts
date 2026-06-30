@@ -105,6 +105,24 @@ describe("renderToHtml", () => {
         });
     });
 
+    describe("subject", () => {
+        it("renders the subject into the document <title> (metadata, not the body)", () => {
+            const html = renderToHtml(makeDoc([createBlock("text")], { subject: "Spring sale" }));
+            expect(html).toContain("<title>Spring sale</title>");
+        });
+
+        it("falls back to a default title when no subject is set", () => {
+            const html = renderToHtml(makeDoc([createBlock("text")]));
+            expect(html).toContain("<title>Email</title>");
+        });
+
+        it("escapes the subject", () => {
+            const html = renderToHtml(makeDoc([createBlock("text")], { subject: "<script>x</script>" }));
+            expect(html).toContain("<title>&lt;script&gt;x&lt;/script&gt;</title>");
+            expect(html).not.toContain("<title><script>");
+        });
+    });
+
     describe("responsive", () => {
         it("includes the mobile media query, fluid container, and column-stacking classes", () => {
             const html = renderToHtml(makeDoc([createBlock("columns")]));

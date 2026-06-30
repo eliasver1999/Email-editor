@@ -1012,7 +1012,12 @@ export function EmailBuilder({ initialDocument, locales, initialDocuments, defau
                                     </div>
                                     <div className="flex items-center gap-2">
                                         <span className="text-xs text-muted-foreground w-12">Subject:</span>
-                                        <span className="text-xs font-medium">{document.settings.preheaderText || "Your Email Subject"}</span>
+                                        <span className="text-xs font-medium">
+                                            {document.settings.subject || "Your Email Subject"}
+                                            {document.settings.preheaderText && (
+                                                <span className="font-normal text-muted-foreground"> — {document.settings.preheaderText}</span>
+                                            )}
+                                        </span>
                                     </div>
                                 </div>
                             </div>

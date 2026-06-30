@@ -791,6 +791,15 @@ export function EmailSettingsPanel({
             <ScrollArea className="flex-1">
                 <div className="px-4 pb-4 space-y-4">
                     <div>
+                        <Label className="text-xs">{tr("emailBuilder.settingsPanel.subject", "Subject")}</Label>
+                        <Input
+                            className="h-8 mt-1 text-xs"
+                            value={settings.subject ?? ""}
+                            placeholder={tr("emailBuilder.settingsPanel.subjectPlaceholder", "Your email subject line")}
+                            onChange={(e) => onUpdate({ subject: e.target.value })}
+                        />
+                    </div>
+                    <div>
                         <Label className="text-xs">{tr("emailBuilder.settingsPanel.preheader", "Preheader (inbox preview text)")}</Label>
                         <Input
                             className="h-8 mt-1 text-xs"

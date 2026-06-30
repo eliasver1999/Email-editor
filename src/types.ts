@@ -268,6 +268,8 @@ export interface EmailSettings {
     textColor: string;
     /** Default link color */
     linkColor: string;
+    /** Email subject line. Metadata — not rendered into the HTML body; the host uses it as the email's `Subject` header when sending. */
+    subject: string;
     /** Preheader text (preview text in inbox) */
     preheaderText: string;
     /** Document-level custom CSS, injected into the email <head> (applies to the whole email) */
@@ -333,6 +335,7 @@ export const DEFAULT_SETTINGS: EmailSettings = {
     fontFamily: "Arial, sans-serif",
     textColor: "#333333",
     linkColor: "#22c55e",
+    subject: "",
     preheaderText: "",
     customCss: "",
     contentBorder: { ...DEFAULT_BORDER },

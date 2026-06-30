@@ -39,8 +39,11 @@ export function MyEditor() {
     <EmailBuilder
       initialDocument={doc}
       onSave={(document, html) => {
-        setDoc(document);        // persist the JSON design
-        sendToServer(html);      // ...and/or the rendered email HTML
+        setDoc(document);                       // persist the JSON design
+        sendToServer({
+          subject: document.settings.subject,   // the email Subject header
+          html,                                 // the rendered email body
+        });
       }}
       onBack={() => history.back()}
     />
@@ -49,6 +52,8 @@ export function MyEditor() {
 ```
 
 That's it — the editor is fully styled (it renders inside a `.email-builder` root the stylesheet targets).
+
+> **Subject & preheader** live on `document.settings` (`subject`, `preheaderText`) — set them in the editor's **Email settings** panel. They're metadata for your sender: the subject is *not* in the rendered body (it's the email's `Subject` header), and the preheader is emitted as the usual hidden inbox-preview snippet.
 
 ## Rendering without the editor
 
