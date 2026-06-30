@@ -7,11 +7,22 @@ include breaking changes.
 
 ## [Unreleased]
 
+## [0.5.1] - 2026-06-26
+
 ### Added
 
 - **Email subject field.** Email Settings now has a **Subject** input. It's stored on `settings.subject` so the host can use it as the email's `Subject` header when sending (returned with the document in `onSave`), shown in the editor's preview header, and written to the exported HTML's `<title>`. It is **not** rendered into the email body.
+
+## [0.5.0] - 2026-06-26
+
+### Added
+
 - **File / Download block.** A new block that links a downloadable file as a styled button or a text link. Upload **any file type** via a new `onFileUpload` prop — which **falls back to `onImageUpload`**, so an existing S3 handler serves files too — or paste a URL. The empty block accepts drag-and-drop, and the uploaded filename becomes the default label.
 - **In-app unsaved-changes guard.** The toolbar now shows an "Unsaved" indicator (amber dot) while there are pending edits, and clicking **Back** with unsaved changes opens a styled confirmation dialog — **Cancel** / **Leave without saving** / **Save & leave** — instead of navigating away silently. The browser's native prompt still guards hard tab-close / refresh. Backed by a new `Dialog` modal primitive.
+
+## [0.4.3] - 2026-06-26
+
+- Maintenance release; no functional changes.
 
 ## [0.4.2] - 2026-06-26
 
@@ -102,7 +113,10 @@ Initial public release.
 - No dark-mode handling or plain-text / multipart alternative yet.
 - Generated HTML has not been validated across the full email-client matrix — smoke-test your own templates (see the README).
 
-[Unreleased]: https://github.com/eliasver1999/Email-editor/compare/v0.4.2...HEAD
+[Unreleased]: https://github.com/eliasver1999/Email-editor/compare/v0.5.1...HEAD
+[0.5.1]: https://github.com/eliasver1999/Email-editor/compare/v0.5.0...v0.5.1
+[0.5.0]: https://github.com/eliasver1999/Email-editor/compare/v0.4.3...v0.5.0
+[0.4.3]: https://github.com/eliasver1999/Email-editor/compare/v0.4.2...v0.4.3
 [0.4.2]: https://github.com/eliasver1999/Email-editor/compare/v0.4.1...v0.4.2
 [0.4.1]: https://github.com/eliasver1999/Email-editor/compare/v0.4.0...v0.4.1
 [0.4.0]: https://github.com/eliasver1999/Email-editor/compare/v0.3.1...v0.4.0
