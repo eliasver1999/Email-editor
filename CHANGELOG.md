@@ -9,6 +9,7 @@ include breaking changes.
 
 ### Added
 
+- **File / Download block.** A new block that links a downloadable file as a styled button or a text link. Upload **any file type** via a new `onFileUpload` prop — which **falls back to `onImageUpload`**, so an existing S3 handler serves files too — or paste a URL. The empty block accepts drag-and-drop, and the uploaded filename becomes the default label.
 - **In-app unsaved-changes guard.** The toolbar now shows an "Unsaved" indicator (amber dot) while there are pending edits, and clicking **Back** with unsaved changes opens a styled confirmation dialog — **Cancel** / **Leave without saving** / **Save & leave** — instead of navigating away silently. The browser's native prompt still guards hard tab-close / refresh. Backed by a new `Dialog` modal primitive.
 
 ## [0.4.2] - 2026-06-26

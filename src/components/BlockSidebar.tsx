@@ -18,6 +18,7 @@ import {
     Play,
     Quote,
     PanelBottom,
+    FileDown,
     GripVertical,
     LucideIcon,
 } from "lucide-react";
@@ -36,6 +37,7 @@ const iconMap: Record<string, LucideIcon> = {
     Play,
     Quote,
     PanelBottom,
+    FileDown,
 };
 
 interface CatalogEntry {

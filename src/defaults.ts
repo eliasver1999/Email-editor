@@ -13,6 +13,7 @@ import {
     LogoBlock,
     FooterBlock,
     QuoteBlock,
+    FileBlock,
     BlockType,
     EmailDocument,
     DEFAULT_PADDING,
@@ -36,6 +37,7 @@ export function createBlock(type: BlockType): EmailBlock {
         logo: createLogoBlock,
         footer: createFooterBlock,
         quote: createQuoteBlock,
+        file: createFileBlock,
     };
     return factories[type]();
 }
@@ -118,6 +120,25 @@ export function createButtonBlock(): ButtonBlock {
         align: "center",
         width: "auto",
         padding: { top: 15, right: 20, bottom: 15, left: 20 },
+    };
+}
+
+export function createFileBlock(): FileBlock {
+    return {
+        id: nanoid(8),
+        type: "file",
+        url: "",
+        label: "Download file",
+        fileName: "",
+        variant: "button",
+        align: "center",
+        color: "#ffffff",
+        buttonColor: "#22c55e",
+        fontSize: 14,
+        borderRadius: 6,
+        showIcon: true,
+        padding: { top: 10, right: 20, bottom: 10, left: 20 },
+        backgroundColor: "transparent",
     };
 }
 

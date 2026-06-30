@@ -14,7 +14,8 @@ export type BlockType =
     | "html"
     | "logo"
     | "footer"
-    | "quote";
+    | "quote"
+    | "file";
 
 // --- Style primitives ---
 
@@ -174,6 +175,32 @@ export interface QuoteBlock extends BaseBlock {
     textAlign: "left" | "center" | "right";
 }
 
+/**
+ * A downloadable file, linked from a styled button or text link. The file URL is
+ * filled by the host's uploader (see `onFileUpload` / `onImageUpload`) or pasted.
+ * `backgroundColor` is the (usually transparent) row background; `buttonColor` is
+ * the button fill for the "button" variant.
+ */
+export interface FileBlock extends BaseBlock {
+    type: "file";
+    /** Hosted file URL the link points to. */
+    url: string;
+    /** Visible link/button text. */
+    label: string;
+    /** Original file name (a hint, and the default label on upload). */
+    fileName: string;
+    variant: "button" | "link";
+    align: "left" | "center" | "right";
+    /** Text color (button label / link text). */
+    color: string;
+    /** Button fill color (variant === "button"). */
+    buttonColor: string;
+    fontSize: number;
+    borderRadius: number;
+    /** Show a small download glyph before the label. */
+    showIcon: boolean;
+}
+
 // --- Union type ---
 
 export type EmailBlock =
@@ -188,7 +215,8 @@ export type EmailBlock =
     | HtmlBlock
     | LogoBlock
     | FooterBlock
-    | QuoteBlock;
+    | QuoteBlock
+    | FileBlock;
 
 /**
  * A third-party block. Same base shape as the built-ins, but `type` is an
@@ -289,6 +317,7 @@ export const BLOCK_CATALOG: BlockCatalogItem[] = [
     { type: "logo", label: "Logo", description: "Brand logo with optional link", icon: "Crown", category: "media" },
     { type: "quote", label: "Quote", description: "Blockquote with author", icon: "Quote", category: "content" },
     { type: "footer", label: "Footer", description: "Email footer with small text", icon: "PanelBottom", category: "layout" },
+    { type: "file", label: "File / Download", description: "Link to a downloadable file", icon: "FileDown", category: "content" },
     { type: "html", label: "Custom HTML", description: "Raw HTML block", icon: "Code", category: "other" },
 ];
 

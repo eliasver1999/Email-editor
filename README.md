@@ -80,20 +80,32 @@ Pass groups of insertable tokens; users can drop them into text, and you control
 
 The exported HTML keeps the raw `{{tokens}}` so your backend does the final substitution at send time.
 
-## Image uploads
+## Image & file uploads
 
-Image and logo fields take a URL by default. Pass `onImageUpload` to add an upload button — with drag-and-drop — next to them: the builder hands you the picked or dropped `File`, you upload it wherever you store assets, and return the hosted URL. Users can also drop an image file straight onto an empty image/logo block on the canvas.
+Image/logo fields and the **File / Download** block take a URL by default. Provide an uploader and the builder adds an upload button (with drag-and-drop): it hands you the picked/dropped `File`, you upload it wherever you store assets, and return the hosted URL.
+
+- `onImageUpload` — images/logos (`<img src>`).
+- `onFileUpload` — the File/Download block, **any** file type (the URL becomes the link). Falls back to `onImageUpload` when omitted, so a single S3 handler serves both.
 
 ```tsx
 <EmailBuilder
+  // One handler for both images and files — e.g. a presigned-S3 upload:
   onImageUpload={async (file) => {
-    const url = await uploadToMyCdn(file); // your code
-    return url;                            // builder writes it into the block
+    // 1) ask your backend for a presigned PUT URL
+    const { uploadUrl, publicUrl } = await fetch(
+      `/api/s3-presign?name=${encodeURIComponent(file.name)}&type=${file.type}`
+    ).then((r) => r.json());
+    // 2) PUT the file straight to S3
+    await fetch(uploadUrl, { method: "PUT", body: file, headers: { "Content-Type": file.type } });
+    // 3) return the public https URL the email will point at
+    return publicUrl;
   }}
+  // Optional: route files differently from images
+  // onFileUpload={async (file) => uploadToDocsBucket(file)}
 />
 ```
 
-Emails require publicly-hosted images, so return an absolute `https://` URL (not a `blob:`/`data:` URI). Without the prop, the fields stay URL-only.
+Emails require publicly-hosted assets, so return an absolute `https://` URL (not a `blob:`/`data:` URI). Without an uploader, the fields stay URL-only.
 
 ## Theming
 
@@ -157,6 +169,7 @@ Pass a `locales` list to keep a **separate design per language**. A switcher app
 | `fieldGroups` | `MergeFieldGroup[]` | Merge-tag groups available to insert. |
 | `previewSubstitute` | `(html) => string` | Resolve `{{tokens}}` to sample values in the live preview. |
 | `onImageUpload` | `(file) => Promise<string>` | Upload picked images and return a hosted URL; adds an upload button to image/logo/thumbnail fields. Omit for URL-only. |
+| `onFileUpload` | `(file) => Promise<string>` | Upload any file for the **File / Download** block and return a hosted URL. Falls back to `onImageUpload` when omitted — one S3 handler serves both. Omit both for URL-only. |
 | `canManageLocks` | `boolean` | Full editor (default `true`). `false` = restricted editor: locked blocks are read-only. |
 | `customBlocks` | `BlockDefinition[]` | Custom block types from `defineBlock` (see [Custom blocks](#custom-blocks-plugin-api)). |
 | `canvasShadow` | `boolean` | Draw a drop shadow around the canvas in edit mode (off by default). |

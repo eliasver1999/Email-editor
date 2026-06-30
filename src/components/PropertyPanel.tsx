@@ -1,9 +1,9 @@
 import { useRef, useState } from "react";
-import { EmailBlock, CustomBlock, Padding, TextBlock, HeadingBlock, ImageBlock, ButtonBlock, DividerBlock, SpacerBlock, SocialBlock, HtmlBlock, LogoBlock, FooterBlock, QuoteBlock, ColumnsBlock, ColumnConfig, EmailSettings, MergeFieldGroup, BorderStyle, DEFAULT_BORDER, resolveButtonWidth } from "../types";
+import { EmailBlock, CustomBlock, Padding, TextBlock, HeadingBlock, ImageBlock, ButtonBlock, DividerBlock, SpacerBlock, SocialBlock, HtmlBlock, LogoBlock, FooterBlock, QuoteBlock, ColumnsBlock, ColumnConfig, EmailSettings, MergeFieldGroup, BorderStyle, DEFAULT_BORDER, resolveButtonWidth, FileBlock } from "../types";
 import { Input, Label, Button, Slider, ScrollArea, Separator, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Popover, PopoverContent, PopoverTrigger, Tabs, TabsList, TabsTrigger, TabsContent } from "../ui/primitives";
 import { CodeEditor } from "../ui/CodeEditor";
 import { useTr } from "../i18n";
-import { useImageUpload } from "../upload";
+import { useImageUpload, useFileUpload } from "../upload";
 import { useCustomBlocks } from "../editor-context";
 import type { BlockDefinition } from "../renderer/toHtml";
 import { toast } from "../ui/hooks";
@@ -138,6 +138,7 @@ export function PropertyPanel({ block, onUpdate, onDelete, onDuplicate, onToggle
                             {block.type === "heading" && <HeadingProps block={block} update={update} />}
                             {block.type === "image" && <ImageProps block={block} update={update} />}
                             {block.type === "button" && <ButtonProps block={block} update={update} />}
+                            {block.type === "file" && <FileProps block={block} update={update} />}
                             {block.type === "divider" && <DividerProps block={block} update={update} />}
                             {block.type === "spacer" && <SpacerProps block={block} update={update} />}
                             {block.type === "social" && <SocialProps block={block} update={update} />}
@@ -302,6 +303,121 @@ function ImageInput({ value, onChange, placeholder }: { value: string; onChange:
                     </Button>
                 </>
             )}
+        </div>
+    );
+}
+
+/**
+ * File URL field with an optional upload button (any file type). Appears for the
+ * File/Download block. Upload uses the host's `onFileUpload` (falling back to
+ * `onImageUpload`); without one the field stays URL-only.
+ */
+function FileInput({ value, onChange, onUpload }: { value: string; onChange: (url: string) => void; onUpload: (url: string, fileName: string) => void }) {
+    const tr = useTr();
+    const onFileUpload = useFileUpload();
+    const inputRef = useRef<HTMLInputElement>(null);
+    const [uploading, setUploading] = useState(false);
+    const [dragOver, setDragOver] = useState(false);
+
+    const handleFile = async (file: File | undefined) => {
+        if (!file || !onFileUpload) return;
+        setUploading(true);
+        try {
+            const url = await onFileUpload(file);
+            if (url) onUpload(url, file.name);
+        } catch (err) {
+            toast({
+                title: tr("emailBuilder.prop.fileUploadFailed", "File upload failed"),
+                description: err instanceof Error ? err.message : undefined,
+                variant: "destructive",
+            });
+        } finally {
+            setUploading(false);
+        }
+    };
+
+    return (
+        <div
+            className={`mt-1 flex items-center gap-1.5 rounded-md ${dragOver ? "ring-2 ring-primary ring-offset-1" : ""}`}
+            onDragOver={onFileUpload ? (e) => { e.preventDefault(); setDragOver(true); } : undefined}
+            onDragLeave={onFileUpload ? () => setDragOver(false) : undefined}
+            onDrop={onFileUpload ? (e) => {
+                e.preventDefault();
+                setDragOver(false);
+                handleFile(Array.from(e.dataTransfer?.files ?? [])[0]);
+            } : undefined}
+        >
+            <Input
+                className="h-8 text-xs flex-1"
+                placeholder="https://… or upload"
+                value={value}
+                onChange={(e) => onChange(e.target.value)}
+            />
+            {onFileUpload && (
+                <>
+                    <input
+                        ref={inputRef}
+                        type="file"
+                        className="hidden"
+                        onChange={(e) => { handleFile(e.target.files?.[0]); e.target.value = ""; }}
+                    />
+                    <Button
+                        type="button"
+                        variant="outline"
+                        size="icon"
+                        className="h-8 w-8 shrink-0"
+                        disabled={uploading}
+                        title={tr("emailBuilder.prop.uploadFile", "Upload file")}
+                        onClick={() => inputRef.current?.click()}
+                    >
+                        {uploading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Upload className="h-3.5 w-3.5" />}
+                    </Button>
+                </>
+            )}
+        </div>
+    );
+}
+
+function FileProps({ block, update }: { block: FileBlock; update: (u: Partial<FileBlock>) => void }) {
+    const tr = useTr();
+    return (
+        <div className="space-y-3">
+            <div>
+                <Label className="text-xs">{tr("emailBuilder.prop.file", "File")}</Label>
+                <FileInput
+                    value={block.url}
+                    onChange={(url) => update({ url })}
+                    onUpload={(url, fileName) => update({ url, fileName })}
+                />
+                {block.fileName && <p className="mt-1 text-[10px] text-muted-foreground truncate" title={block.fileName}>{block.fileName}</p>}
+            </div>
+            <div>
+                <Label className="text-xs">{tr("emailBuilder.prop.label", "Label")}</Label>
+                <Input className="h-8 mt-1 text-sm" value={block.label} onChange={(e) => update({ label: e.target.value })} />
+            </div>
+            <div>
+                <Label className="text-xs">{tr("emailBuilder.prop.style", "Style")}</Label>
+                <Select value={block.variant} onValueChange={(v) => update({ variant: v as "button" | "link" })}>
+                    <SelectTrigger className="h-8 mt-1"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="button">{tr("emailBuilder.prop.button", "Button")}</SelectItem>
+                        <SelectItem value="link">{tr("emailBuilder.prop.link", "Link")}</SelectItem>
+                    </SelectContent>
+                </Select>
+            </div>
+            <AlignSelect value={block.align} onChange={(v) => update({ align: v })} />
+            <ColorInput label={tr("emailBuilder.prop.textColor", "Text Color")} value={block.color} onChange={(v) => update({ color: v })} />
+            {block.variant === "button" && (
+                <>
+                    <ColorInput label={tr("emailBuilder.prop.buttonColor", "Button Color")} value={block.buttonColor} onChange={(v) => update({ buttonColor: v })} />
+                    <SliderField label={tr("emailBuilder.prop.borderRadius", "Border Radius")} value={block.borderRadius} min={0} max={50} onChange={(v) => update({ borderRadius: v })} suffix="px" />
+                </>
+            )}
+            <SliderField label={tr("emailBuilder.prop.fontSize", "Font Size")} value={block.fontSize} min={12} max={24} onChange={(v) => update({ fontSize: v })} suffix="px" />
+            <div className="flex items-center gap-2">
+                <input type="checkbox" id="file-icon" checked={block.showIcon} onChange={(e) => update({ showIcon: e.target.checked })} className="rounded" />
+                <Label htmlFor="file-icon" className="text-xs">{tr("emailBuilder.prop.showDownloadIcon", "Show download icon")}</Label>
+            </div>
         </div>
     );
 }

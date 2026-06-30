@@ -18,6 +18,7 @@ import {
     LogoBlock,
     FooterBlock,
     QuoteBlock,
+    FileBlock,
 } from "../types";
 import type * as React from "react";
 
@@ -278,6 +279,20 @@ const BUILTIN_RENDERERS: BlockRenderer[] = [
                 `</div>`,
                 { padding: block.padding, backgroundColor: "transparent" },
             );
+        },
+    }),
+    defineBlock<FileBlock>({
+        type: "file",
+        toHtml: (block, ctx) => {
+            const href = ctx.escapeHtml(block.url || "#");
+            const label = `${block.showIcon ? "&#11015;&#65039; " : ""}${ctx.escapeHtml(block.label)}`;
+            const font = ctx.settings.fontFamily;
+            const inner = block.variant === "button"
+                ? `<!--[if mso]><v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="${href}" style="height:auto;v-text-anchor:middle;display:inline-block;" arcsize="${Math.round(block.borderRadius / 40 * 100)}%" stroke="f" fillcolor="${block.buttonColor}"><w:anchorlock/><center><![endif]-->` +
+                  `<a href="${href}" target="_blank" style="display:inline-block;background-color:${block.buttonColor};color:${block.color};font-size:${block.fontSize}px;font-family:${font};border-radius:${block.borderRadius}px;padding:12px 28px;text-decoration:none;font-weight:bold;text-align:center;mso-padding-alt:0;">${label}</a>` +
+                  `<!--[if mso]></center></v:roundrect><![endif]-->`
+                : `<a href="${href}" target="_blank" style="color:${block.color};font-size:${block.fontSize}px;font-family:${font};text-decoration:underline;">${label}</a>`;
+            return ctx.wrapRow(`<div style="text-align:${block.align};">${inner}</div>`);
         },
     }),
     defineBlock<DividerBlock>({

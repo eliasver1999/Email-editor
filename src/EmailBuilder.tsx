@@ -71,7 +71,7 @@ import { BlockSidebar } from "./components/BlockSidebar";
 import { PropertyPanel, EmailSettingsPanel } from "./components/PropertyPanel";
 import { exportToJson, importFromJson, renderEmailHtml, type BlockDefinition } from "./renderer/toHtml";
 import { BuilderI18nContext, makeTr } from "./i18n";
-import { ImageUploadContext, type ImageUploadFn } from "./upload";
+import { ImageUploadContext, FileUploadContext, type ImageUploadFn, type FileUploadFn } from "./upload";
 import { UpdateBlockContext, LockingContext, CustomBlocksContext } from "./editor-context";
 
 /**
@@ -112,6 +112,8 @@ export interface EmailBuilderProps {
     fieldGroups?: MergeFieldGroup[];
     /** Upload handler for image/logo/thumbnail fields. Receives the picked File, returns a hosted URL. Omit to keep fields URL-only. */
     onImageUpload?: ImageUploadFn;
+    /** Upload handler for the File/Download block (any file type). Receives the picked File, returns a hosted URL. Falls back to `onImageUpload` when omitted. */
+    onFileUpload?: FileUploadFn;
     /** Show a drop shadow around the canvas in edit mode (off by default). */
     canvasShadow?: boolean;
     /** Full editor (default true). When false, the user is a restricted editor: locked blocks are read-only and the lock toggle is hidden. */
@@ -184,7 +186,7 @@ function cloneDoc(doc: EmailDocument): EmailDocument {
     return JSON.parse(JSON.stringify(doc)) as EmailDocument;
 }
 
-export function EmailBuilder({ initialDocument, locales, initialDocuments, defaultLocale, onChange, onSave, onBack, fieldGroups, previewSubstitute, onImageUpload, canvasShadow, canManageLocks = true, customBlocks, t }: EmailBuilderProps) {
+export function EmailBuilder({ initialDocument, locales, initialDocuments, defaultLocale, onChange, onSave, onBack, fieldGroups, previewSubstitute, onImageUpload, onFileUpload, canvasShadow, canManageLocks = true, customBlocks, t }: EmailBuilderProps) {
     const { toast } = useToast();
     const tr = useMemo(() => makeTr(t), [t]);
 
@@ -800,6 +802,7 @@ export function EmailBuilder({ initialDocument, locales, initialDocuments, defau
     return (
         <BuilderI18nContext.Provider value={t}>
         <ImageUploadContext.Provider value={onImageUpload}>
+        <FileUploadContext.Provider value={onFileUpload ?? onImageUpload}>
         <UpdateBlockContext.Provider value={updateBlock}>
         <LockingContext.Provider value={canManageLocks}>
         <CustomBlocksContext.Provider value={customBlockMap}>
@@ -1083,6 +1086,7 @@ export function EmailBuilder({ initialDocument, locales, initialDocuments, defau
         </CustomBlocksContext.Provider>
         </LockingContext.Provider>
         </UpdateBlockContext.Provider>
+        </FileUploadContext.Provider>
         </ImageUploadContext.Provider>
         </BuilderI18nContext.Provider>
     );

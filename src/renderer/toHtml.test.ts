@@ -7,10 +7,11 @@ import {
     createButtonBlock,
     createImageBlock,
     createHtmlBlock,
+    createFileBlock,
     createStarterDocument,
 } from "../defaults";
 import { DEFAULT_SETTINGS, BLOCK_CATALOG } from "../types";
-import type { EmailBlock, EmailDocument, EmailSettings, CustomBlock, AnyBlock } from "../types";
+import type { EmailBlock, EmailDocument, EmailSettings, CustomBlock, AnyBlock, FileBlock } from "../types";
 
 const PAD = { top: 0, right: 0, bottom: 0, left: 0 };
 
@@ -77,6 +78,30 @@ describe("renderToHtml", () => {
             const html = renderToHtml(makeDoc([createButtonBlock()])); // backgroundColor #22c55e
             expect(html).not.toContain("padding:15px 20px 15px 20px;background-color:"); // row <td> has no bg
             expect(html).toContain("background-color:#22c55e"); // ...but the <a> button is still green
+        });
+    });
+
+    describe("file / download block", () => {
+        it("renders a button-variant download link to the file URL", () => {
+            const file: FileBlock = { ...createFileBlock(), url: "https://cdn.example.com/guide.pdf", label: "Get the guide" };
+            const html = renderToHtml(makeDoc([file]));
+            expect(html).toContain('href="https://cdn.example.com/guide.pdf"');
+            expect(html).toContain("Get the guide");
+            expect(html).toContain("background-color:#22c55e"); // button fill (buttonColor)
+        });
+
+        it("renders a link variant as an underlined anchor", () => {
+            const file: FileBlock = { ...createFileBlock(), variant: "link", url: "https://x.io/y.zip", label: "Download" };
+            const html = renderToHtml(makeDoc([file]));
+            expect(html).toContain('href="https://x.io/y.zip"');
+            expect(html).toContain("text-decoration:underline");
+        });
+
+        it("escapes the file URL and label (no markup injection)", () => {
+            const file: FileBlock = { ...createFileBlock(), url: 'https://x/"><script>a()</script>', label: "<b>x</b>" };
+            const html = renderToHtml(makeDoc([file]));
+            expect(html).not.toContain("<script>a()");
+            expect(html).not.toContain("<b>x</b>");
         });
     });
 

@@ -27,6 +27,7 @@ export type {
     LogoBlock,
     FooterBlock,
     QuoteBlock,
+    FileBlock,
     Padding,
     BorderStyle,
 } from "./types";

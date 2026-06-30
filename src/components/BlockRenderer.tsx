@@ -28,10 +28,11 @@ import {
     Upload,
     Loader2,
     Lock,
+    FileDown,
 } from "lucide-react";
 import { cn } from "../ui/utils";
 import { useTr } from "../i18n";
-import { useImageUpload } from "../upload";
+import { useImageUpload, useFileUpload } from "../upload";
 import { useUpdateBlock, useCanManageLocks, useCustomBlocks } from "../editor-context";
 import { toast } from "../ui/hooks";
 
@@ -449,6 +450,47 @@ function renderBlock(
             );
         }
 
+        case "file": {
+            const isButton = block.variant === "button";
+            const linkStyle: React.CSSProperties = isButton
+                ? {
+                      display: "inline-block",
+                      backgroundColor: block.buttonColor,
+                      color: block.color,
+                      fontSize: `${block.fontSize}px`,
+                      borderRadius: `${block.borderRadius}px`,
+                      padding: "12px 28px",
+                      textDecoration: "none",
+                      fontWeight: "bold",
+                      cursor: isEditing ? "pointer" : undefined,
+                  }
+                : {
+                      color: block.color,
+                      fontSize: `${block.fontSize}px`,
+                      textDecoration: "underline",
+                      cursor: isEditing ? "pointer" : undefined,
+                  };
+            const label = (
+                <>
+                    {block.showIcon && <span aria-hidden>⬇️ </span>}
+                    {block.label}
+                </>
+            );
+            return (
+                <div style={{ textAlign: block.align }}>
+                    {block.url ? (
+                        <a href={isEditing ? undefined : block.url} target="_blank" rel="noreferrer" style={linkStyle}>
+                            {label}
+                        </a>
+                    ) : isEditing ? (
+                        <FileUploadPlaceholder blockId={block.id} />
+                    ) : (
+                        <span style={linkStyle}>{label}</span>
+                    )}
+                </div>
+            );
+        }
+
         case "divider":
             return (
                 <div style={{ textAlign: "center" }}>
@@ -752,6 +794,97 @@ function ImageUploadPlaceholder({ blockId }: { blockId: string }) {
                     </button>
                     <span className="text-[10px] text-muted-foreground">{tr("emailBuilder.prop.orDropImage", "or drop an image here")}</span>
                 </>
+            )}
+        </div>
+    );
+}
+
+/**
+ * Empty File/Download-block placeholder. With an `onFileUpload` (or `onImageUpload`
+ * fallback) handler it offers an inline "Upload file" button that opens the file
+ * picker (any type), uploads, and writes the returned URL + filename to the block.
+ */
+function FileUploadPlaceholder({ blockId }: { blockId: string }) {
+    const tr = useTr();
+    const onFileUpload = useFileUpload();
+    const updateBlock = useUpdateBlock();
+    const inputRef = useRef<HTMLInputElement>(null);
+    const [uploading, setUploading] = useState(false);
+    const [dragOver, setDragOver] = useState(false);
+
+    const handleFile = async (file: File | undefined) => {
+        if (!file || !onFileUpload) return;
+        setUploading(true);
+        try {
+            const url = await onFileUpload(file);
+            // Default the visible label to the filename on first upload.
+            if (url) updateBlock?.(blockId, { url, fileName: file.name, label: file.name });
+        } catch (err) {
+            toast({
+                title: tr("emailBuilder.prop.fileUploadFailed", "File upload failed"),
+                description: err instanceof Error ? err.message : undefined,
+                variant: "destructive",
+            });
+        } finally {
+            setUploading(false);
+        }
+    };
+
+    const dropProps = onFileUpload
+        ? {
+              onDragOver: (e: React.DragEvent) => { e.preventDefault(); e.stopPropagation(); setDragOver(true); },
+              onDragLeave: () => setDragOver(false),
+              onDrop: (e: React.DragEvent) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setDragOver(false);
+                  handleFile(Array.from(e.dataTransfer?.files ?? [])[0]);
+              },
+          }
+        : {};
+
+    return (
+        <div
+            {...dropProps}
+            style={{
+                width: "100%",
+                minHeight: "120px",
+                backgroundColor: dragOver ? "hsl(var(--primary) / 0.08)" : "#f3f4f6",
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: "10px",
+                borderRadius: "8px",
+                border: dragOver ? "2px dashed hsl(var(--primary))" : "2px dashed #d1d5db",
+                padding: "16px",
+            }}
+        >
+            <FileDown className="h-7 w-7 text-gray-400" />
+            {onFileUpload ? (
+                <>
+                    <input
+                        ref={inputRef}
+                        type="file"
+                        className="hidden"
+                        onChange={(e) => {
+                            handleFile(e.target.files?.[0]);
+                            e.target.value = "";
+                        }}
+                    />
+                    <button
+                        type="button"
+                        disabled={uploading}
+                        onClick={(e) => { e.stopPropagation(); inputRef.current?.click(); }}
+                        className="inline-flex items-center gap-1.5 rounded-md border border-border bg-card px-3 py-1.5 text-xs font-medium hover:bg-accent hover:text-accent-foreground"
+                    >
+                        {uploading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Upload className="h-3.5 w-3.5" />}
+                        {tr("emailBuilder.prop.uploadFile", "Upload file")}
+                    </button>
+                    <span className="text-[10px] text-muted-foreground">{tr("emailBuilder.prop.orDropFile", "or drop a file here")}</span>
+                </>
+            ) : (
+                <span className="text-[10px] text-muted-foreground">{tr("emailBuilder.prop.setFileUrl", "Set a file URL in the panel")}</span>
             )}
         </div>
     );
