@@ -105,6 +105,20 @@ describe("renderToHtml", () => {
         });
     });
 
+    describe("content border + text defaults", () => {
+        it("renders the content border + radius with separate border-collapse so the radius can apply", () => {
+            const html = renderToHtml(makeDoc([createBlock("text")], { contentBorder: { width: 2, style: "solid", color: "#e5e7eb", radius: 16 } }));
+            expect(html).toContain("border-collapse:separate"); // collapsed borders ignore border-radius
+            expect(html).toContain("border:2px solid #e5e7eb");
+            expect(html).toContain("border-radius:16px");
+        });
+
+        it("gives a new text block default padding (not flush to the email edges)", () => {
+            const html = renderToHtml(makeDoc([createTextBlock()]));
+            expect(html).toContain("padding:8px 24px 8px 24px");
+        });
+    });
+
     describe("subject", () => {
         it("renders the subject into the document <title> (metadata, not the body)", () => {
             const html = renderToHtml(makeDoc([createBlock("text")], { subject: "Spring sale" }));

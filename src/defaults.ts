@@ -72,7 +72,8 @@ export function createTextBlock(): TextBlock {
         fontFamily: "Arial, sans-serif",
         lineHeight: 1.6,
         textAlign: "left",
-        padding: { ...DEFAULT_PADDING },
+        // Sensible default so body text isn't flush against the email edges.
+        padding: { top: 8, right: 24, bottom: 8, left: 24 },
         backgroundColor: "transparent",
     };
 }
