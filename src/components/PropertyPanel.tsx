@@ -797,6 +797,7 @@ export function EmailSettingsPanel({
                         />
                     </div>
                     <SliderField label={tr("emailBuilder.settingsPanel.contentWidth", "Content width")} value={settings.contentWidth} min={320} max={800} step={10} onChange={(v) => onUpdate({ contentWidth: v })} suffix="px" />
+                    <SliderField label={tr("emailBuilder.settingsPanel.bodyPadding", "Body padding (top & bottom)")} value={settings.bodyPadding ?? 0} min={0} max={80} step={2} onChange={(v) => onUpdate({ bodyPadding: v })} suffix="px" />
                     <FontFamilySelect value={settings.fontFamily} onChange={(v) => onUpdate({ fontFamily: v })} />
                     <Separator />
                     <ColorInput label={tr("emailBuilder.settingsPanel.bodyBackground", "Body background")} value={settings.backgroundColor} onChange={(v) => onUpdate({ backgroundColor: v })} />

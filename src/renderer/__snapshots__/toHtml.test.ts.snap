@@ -35,7 +35,7 @@ p { margin: 0 0 10px 0; }
 </head>
 <body style="margin:0;padding:0;background-color:#f4f4f5;font-family:Arial, sans-serif;color:#333333;">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#f4f4f5;">
-<tr><td align="center" style="padding:20px 0;">
+<tr><td align="center" style="padding:0px 0;">
 <table role="presentation" class="eb-container" width="600" cellpadding="0" cellspacing="0" border="0" style="max-width:600px;width:100%;border-collapse:separate;border-spacing:0;background-color:#ffffff;">
 <tr><td class="eb-block eb-block-heading" style="padding:20px 0px 10px 0px;"><h1 style="margin:0;color:#111111;font-family:Arial, sans-serif;text-align:left;font-size:28px;">Heading</h1></td></tr>
 <tr><td class="eb-block eb-block-text" style="padding:8px 24px 8px 24px;"><div style="color:#333333;font-size:14px;font-family:Arial, sans-serif;line-height:1.6;text-align:left;"><p>Type your text here...</p></div></td></tr>

@@ -106,7 +106,7 @@ ${settings.preheaderText ? `<div style="display:none;font-size:1px;color:#ffffff
 </head>
 <body style="margin:0;padding:0;background-color:${settings.backgroundColor};font-family:${settings.fontFamily};color:${settings.textColor};">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:${settings.backgroundColor};">
-<tr><td align="center" style="padding:20px 0;">
+<tr><td align="center" style="padding:${settings.bodyPadding ?? 0}px 0;">
 <table role="presentation" class="eb-container" width="${settings.contentWidth}" cellpadding="0" cellspacing="0" border="0" style="max-width:${settings.contentWidth}px;width:100%;border-collapse:separate;border-spacing:0;background-color:${settings.contentBackgroundColor};${contentBorderCss}">
 ${bodyContent}
 </table>

@@ -276,8 +276,12 @@ export function Canvas({ blocks, settings, selectedBlockId, onSelectBlock, isPre
             }}
         >
             <div
-                className={cn("eb-content-css mx-auto my-5 flex flex-col", shadow && "shadow-lg")}
+                className={cn("eb-content-css mx-auto flex flex-col", shadow && "shadow-lg")}
                 style={{
+                    // Mirror the email's vertical body padding (toHtml wraps the
+                    // content in `padding:{bodyPadding}px 0`) so edit == preview == email.
+                    marginTop: settings.bodyPadding ?? 0,
+                    marginBottom: settings.bodyPadding ?? 0,
                     maxWidth: `${settings.contentWidth}px`,
                     backgroundColor: settings.contentBackgroundColor,
                     fontFamily: settings.fontFamily,

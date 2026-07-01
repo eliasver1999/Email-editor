@@ -252,6 +252,8 @@ export interface EmailSettings {
     backgroundColor: string;
     /** Content area background color */
     contentBackgroundColor: string;
+    /** Vertical padding (px) above and below the content area, in the body background. 0 = content sits flush. Defaults to 0 when omitted. */
+    bodyPadding?: number;
     /** Default font family */
     fontFamily: string;
     /** Default text color */
@@ -321,6 +323,7 @@ export const DEFAULT_SETTINGS: EmailSettings = {
     contentWidth: 600,
     backgroundColor: "#f4f4f5",
     contentBackgroundColor: "#ffffff",
+    bodyPadding: 0,
     fontFamily: "Arial, sans-serif",
     textColor: "#333333",
     linkColor: "#22c55e",
