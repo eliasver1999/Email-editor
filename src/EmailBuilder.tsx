@@ -227,6 +227,9 @@ export function EmailBuilder({ initialDocument, locales, initialDocuments, defau
     const [viewMode, setViewMode] = useState<"edit" | "preview" | "code">("edit");
     const [previewWidth, setPreviewWidth] = useState<"desktop" | "mobile">("desktop");
     const [isDirty, setIsDirty] = useState(false);
+    // Manual override of the exported HTML, set by editing the "HTML" code tab.
+    // null = derive from blocks. Cleared whenever the document changes.
+    const [htmlOverride, setHtmlOverride] = useState<string | null>(null);
     // Open when the user clicks Back with unsaved changes (in-app confirm dialog).
     const [confirmLeaveOpen, setConfirmLeaveOpen] = useState(false);
     const [isDragging, setIsDragging] = useState(false);
@@ -530,7 +533,7 @@ export function EmailBuilder({ initialDocument, locales, initialDocuments, defau
     // --- Export/Import ---
 
     const handleExportHtml = useCallback(async () => {
-        const html = await renderEmailHtml(document, { blocks: customBlocks });
+        const html = htmlOverride ?? await renderEmailHtml(document, { blocks: customBlocks });
         const blob = new Blob([html], { type: "text/html" });
         const url = URL.createObjectURL(blob);
         const a = window.document.createElement("a");
@@ -539,7 +542,7 @@ export function EmailBuilder({ initialDocument, locales, initialDocuments, defau
         a.click();
         URL.revokeObjectURL(url);
         toast({ title: "HTML exported" });
-    }, [document, toast]);
+    }, [document, toast, htmlOverride, customBlocks]);
 
     const handleExportJson = useCallback(() => {
         const json = exportToJson(document);
@@ -646,7 +649,8 @@ export function EmailBuilder({ initialDocument, locales, initialDocuments, defau
     }, [isMultiLocale, localeList, activeLocale, document, tr, toast]);
 
     const handleSave = useCallback(async () => {
-        const html = await renderEmailHtml(document, { blocks: customBlocks });
+        // Use the hand-edited HTML for the active language if the code tab was edited.
+        const html = htmlOverride ?? await renderEmailHtml(document, { blocks: customBlocks });
         if (isMultiLocale) {
             // Render every language's design so the host can persist all variants.
             const documents: Record<string, EmailDocument> = { ...localeDocs, [activeLocale]: document };
@@ -660,7 +664,7 @@ export function EmailBuilder({ initialDocument, locales, initialDocuments, defau
         }
         setIsDirty(false);
         toast({ title: "Saved" });
-    }, [document, onSave, toast, customBlocks, isMultiLocale, localeDocs, activeLocale]);
+    }, [document, onSave, toast, customBlocks, isMultiLocale, localeDocs, activeLocale, htmlOverride]);
 
     // Back button: confirm in-app (styled dialog) when there are unsaved changes,
     // instead of leaving silently. The browser's own beforeunload prompt still
@@ -712,6 +716,10 @@ export function EmailBuilder({ initialDocument, locales, initialDocuments, defau
     const [compiledHtml, setCompiledHtml] = useState("");
     const [compiling, setCompiling] = useState(false);
     const [previewHeight, setPreviewHeight] = useState(400);
+    // Any change to `document` (block edit, undo/redo, import, locale switch)
+    // discards the manual HTML override so the blocks become the source again.
+    useEffect(() => { setHtmlOverride(null); }, [document]);
+
     useEffect(() => {
         if (viewMode !== "code" && viewMode !== "preview") return;
         let cancelled = false;
@@ -722,12 +730,16 @@ export function EmailBuilder({ initialDocument, locales, initialDocuments, defau
         return () => { cancelled = true; };
     }, [viewMode, document]);
 
-    // The preview shows the *compiled* HTML with merge tags resolved to sample
-    // values (when the host provides a substitutor) — true WYSIWYG. The token
-    // form is preserved everywhere else (save/export/code view).
+    // What gets saved / exported / previewed: the manual override if the user
+    // hand-edited the code tab, otherwise the freshly-compiled block output.
+    const sourceHtml = htmlOverride ?? compiledHtml;
+
+    // The preview shows this HTML with merge tags resolved to sample values (when
+    // the host provides a substitutor) — true WYSIWYG. The token form is preserved
+    // everywhere else (save/export/code view).
     const previewHtml = useMemo(
-        () => (previewSubstitute ? previewSubstitute(compiledHtml) : compiledHtml),
-        [compiledHtml, previewSubstitute],
+        () => (previewSubstitute ? previewSubstitute(sourceHtml) : sourceHtml),
+        [sourceHtml, previewSubstitute],
     );
 
     // --- Keyboard shortcuts ---
@@ -1050,15 +1062,34 @@ export function EmailBuilder({ initialDocument, locales, initialDocuments, defau
                 )}
 
                 {viewMode === "code" && (
-                    <div className="flex-1 overflow-hidden">
-                        <CodeEditor
-                            language="html"
-                            readOnly
-                            value={compiling ? "<!-- Compiling… -->" : compiledHtml}
-                            height="100%"
-                            className="h-full overflow-hidden"
-                            ariaLabel={tr("emailBuilder.codeView", "Email HTML")}
-                        />
+                    <div className="flex-1 flex flex-col overflow-hidden">
+                        <div className="flex items-center justify-between gap-2 px-3 py-1.5 border-b bg-muted/40 text-[11px] text-muted-foreground shrink-0">
+                            <span>
+                                {htmlOverride !== null
+                                    ? tr("emailBuilder.htmlEditedNotice", "Editing raw HTML — this overrides the blocks on save/export. Editing a block regenerates it.")
+                                    : tr("emailBuilder.htmlEditableNotice", "Edit this HTML to override the exported output. Editing a block regenerates it.")}
+                            </span>
+                            {htmlOverride !== null && (
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="h-6 px-2 text-[11px] shrink-0"
+                                    onClick={() => setHtmlOverride(null)}
+                                >
+                                    {tr("emailBuilder.regenerateFromBlocks", "Regenerate from blocks")}
+                                </Button>
+                            )}
+                        </div>
+                        <div className="flex-1 overflow-hidden">
+                            <CodeEditor
+                                language="html"
+                                value={htmlOverride !== null ? htmlOverride : (compiling ? "<!-- Compiling… -->" : compiledHtml)}
+                                onChange={(v) => { setHtmlOverride(v); setIsDirty(true); }}
+                                height="100%"
+                                className="h-full overflow-hidden"
+                                ariaLabel={tr("emailBuilder.codeView", "Email HTML")}
+                            />
+                        </div>
                     </div>
                 )}
             </div>

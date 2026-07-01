@@ -7,6 +7,14 @@ include breaking changes.
 
 ## [Unreleased]
 
+### Added
+
+- **Editable HTML output.** The toolbar **"HTML"** tab is now editable — hand-edit the compiled email HTML and it becomes what gets saved / exported / previewed (a manual override). A banner shows when you're overriding, with a **"Regenerate from blocks"** button to revert; editing any block automatically regenerates the HTML and discards the manual edits.
+
+### Changed
+
+- The **Custom HTML block editor is taller** (360px) with clear **HTML | CSS** tabs, so raw HTML/CSS is easier to read and edit.
+
 ### Removed
 
 - The **Logo** block — it duplicated the Image block. Use an **Image** block instead (the default starter layout now uses a small centered image for the top slot). Saved documents still open, but any block with `type: "logo"` won't render — re-add it as an image.

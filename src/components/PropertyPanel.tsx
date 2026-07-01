@@ -570,6 +570,7 @@ function HtmlProps({ block, update }: { block: HtmlBlock; update: (u: Partial<Ht
                         language="html"
                         value={block.content}
                         onChange={(content) => update({ content })}
+                        height={360}
                         ariaLabel={tr("emailBuilder.prop.htmlCode", "HTML Code")}
                     />
                 </TabsContent>
@@ -578,6 +579,7 @@ function HtmlProps({ block, update }: { block: HtmlBlock; update: (u: Partial<Ht
                         language="css"
                         value={block.css ?? ""}
                         onChange={(css) => update({ css })}
+                        height={360}
                         ariaLabel={tr("emailBuilder.prop.cssCode", "CSS")}
                     />
                     <p className="mt-1.5 text-[10px] leading-snug text-muted-foreground">
