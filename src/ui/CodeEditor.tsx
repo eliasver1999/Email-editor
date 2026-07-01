@@ -113,6 +113,9 @@ export function CodeEditor({ value, onChange, language, height = 240, readOnly, 
                             automaticLayout: true,
                             tabSize: 2,
                             padding: { top: 8 },
+                            // Render suggestion/hover/param popups in a fixed layer so they
+                            // aren't clipped by the editor's overflow:hidden box or the panel.
+                            fixedOverflowWidgets: true,
                         }}
                     />
                 </Suspense>

@@ -79,12 +79,31 @@ function InstallPill() {
     );
 }
 
+/** The email-block-builder logo mark (mirrors assets/logo.svg). */
+function LogoMark({ size = 24 }: { size?: number }) {
+    return (
+        <svg width={size} height={size} viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="email-block-builder">
+            <defs>
+                <linearGradient id="ebb-g" x1="0" y1="0" x2="0" y2="64" gradientUnits="userSpaceOnUse">
+                    <stop stopColor="#22c55e" />
+                    <stop offset="1" stopColor="#16a34a" />
+                </linearGradient>
+            </defs>
+            <rect width="64" height="64" rx="14" fill="url(#ebb-g)" />
+            <rect x="14" y="16" width="36" height="32" rx="5" fill="#ffffff" />
+            <path d="M16.5 20 L32 31 L47.5 20" stroke="#16a34a" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+            <rect x="20" y="37" width="24" height="3.6" rx="1.8" fill="#22c55e" />
+            <rect x="20" y="43" width="15" height="3.6" rx="1.8" fill="#86efac" />
+        </svg>
+    );
+}
+
 function Nav() {
     return (
         <nav style={{ borderBottom: "1px solid #e5e7eb", background: "#fff" }}>
             <div style={{ maxWidth: 1200, margin: "0 auto", padding: "12px 20px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                    <span style={{ fontSize: 18 }} aria-hidden>✉️</span>
+                <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
+                    <LogoMark size={26} />
                     <strong style={{ fontSize: 15, color: "#0f172a", letterSpacing: "-0.01em" }}>email-block-builder</strong>
                 </div>
                 <div style={{ display: "flex", alignItems: "center", gap: 18 }}>

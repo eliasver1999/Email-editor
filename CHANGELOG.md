@@ -27,6 +27,7 @@ include breaking changes.
 ### Fixed
 
 - **Content border & corner radius now render in the sent email.** The content table used `border-collapse: collapse`, which makes clients ignore `border-radius` and lets row backgrounds (e.g. the footer) bleed over the side border — so the radius was lost and the border looked broken. Switched the content table to `border-collapse: separate` (with `border-spacing: 0`), so the radius applies and the border wraps the whole content area.
+- **Code-editor autocomplete/hover popups no longer get clipped** by the editor's box or the side panel — they now render in a fixed overflow layer (`fixedOverflowWidgets`).
 
 ## [0.5.1] - 2026-06-26
 

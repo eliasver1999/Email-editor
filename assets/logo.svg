@@ -1,0 +1,16 @@
+<svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="email-block-builder logo">
+  <defs>
+    <linearGradient id="ebb-g" x1="0" y1="0" x2="0" y2="64" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#22c55e"/>
+      <stop offset="1" stop-color="#16a34a"/>
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="14" fill="url(#ebb-g)"/>
+  <!-- envelope body -->
+  <rect x="14" y="16" width="36" height="32" rx="5" fill="#ffffff"/>
+  <!-- flap -->
+  <path d="M16.5 20 L32 31 L47.5 20" stroke="#16a34a" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  <!-- content "blocks" -->
+  <rect x="20" y="37" width="24" height="3.6" rx="1.8" fill="#22c55e"/>
+  <rect x="20" y="43" width="15" height="3.6" rx="1.8" fill="#86efac"/>
+</svg>
