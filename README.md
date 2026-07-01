@@ -118,7 +118,21 @@ Emails require publicly-hosted assets, so return an absolute `https://` URL (not
 
 ## Theming
 
-Override any CSS variable on `.email-builder` (or a parent). Add a `.dark` class for dark mode.
+The editor ships **precompiled, self-contained CSS scoped to `.email-builder`** — no Tailwind setup needed in your app, and it won't collide with your own Tailwind (both are namespaced). Theme it two ways:
+
+**As a prop** — pass `theme` (colors as hex *or* HSL channels; `radius` as any length), plus `dark` / `className`:
+
+```tsx
+<EmailBuilder
+  theme={{ primary: "#7c3aed", radius: "0.25rem", ring: "#7c3aed" }}
+  dark={isDark}                 // or put `.dark` on any ancestor yourself
+  className="my-editor"         // your own class alongside `email-builder`
+/>
+```
+
+`theme` keys: `background`, `foreground`, `card(Foreground)`, `popover(Foreground)`, `primary(Foreground)`, `secondary(Foreground)`, `muted(Foreground)`, `accent(Foreground)`, `destructive(Foreground)`, `border`, `input`, `ring`, `radius`.
+
+**Or in CSS** — override the variables on `.email-builder` (or any parent). Handy if your Tailwind config already defines these tokens:
 
 ```css
 .email-builder {

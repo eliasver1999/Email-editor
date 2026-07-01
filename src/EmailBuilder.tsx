@@ -139,6 +139,81 @@ export interface EmailBuilderProps {
      * built-in English, so the builder still works standalone.
      */
     t?: (key: string) => string;
+    /** Theme overrides applied as CSS variables on the editor root. Colors accept hex (`#7c3aed`) or HSL channels (`262 83% 58%`); `radius` is any CSS length. */
+    theme?: EmailBuilderTheme;
+    /** Render the editor in dark mode (adds the `dark` class). You can also put `.dark` on any ancestor yourself. */
+    dark?: boolean;
+    /** Extra class(es) for the editor root, alongside `email-builder` — e.g. your own layout or theme class. */
+    className?: string;
+}
+
+/**
+ * CSS-variable theme overrides for the editor chrome. Color values accept a hex
+ * string (`#7c3aed`) or shadcn-style HSL channels (`262 83% 58%`); `radius` is
+ * any CSS length (`0.75rem`). Omitted keys keep the built-in default/dark theme.
+ */
+export interface EmailBuilderTheme {
+    background?: string;
+    foreground?: string;
+    card?: string;
+    cardForeground?: string;
+    popover?: string;
+    popoverForeground?: string;
+    primary?: string;
+    primaryForeground?: string;
+    secondary?: string;
+    secondaryForeground?: string;
+    muted?: string;
+    mutedForeground?: string;
+    accent?: string;
+    accentForeground?: string;
+    destructive?: string;
+    destructiveForeground?: string;
+    border?: string;
+    input?: string;
+    ring?: string;
+    radius?: string;
+}
+
+const THEME_VARS: Record<keyof EmailBuilderTheme, string> = {
+    background: "--background", foreground: "--foreground",
+    card: "--card", cardForeground: "--card-foreground",
+    popover: "--popover", popoverForeground: "--popover-foreground",
+    primary: "--primary", primaryForeground: "--primary-foreground",
+    secondary: "--secondary", secondaryForeground: "--secondary-foreground",
+    muted: "--muted", mutedForeground: "--muted-foreground",
+    accent: "--accent", accentForeground: "--accent-foreground",
+    destructive: "--destructive", destructiveForeground: "--destructive-foreground",
+    border: "--border", input: "--input", ring: "--ring", radius: "--radius",
+};
+
+/** Convert a #hex color to shadcn "h s% l%" channels; pass through anything else (channels, etc.). */
+function toHslChannels(v: string): string {
+    const m = /^#([0-9a-f]{3}|[0-9a-f]{6})$/i.exec(v.trim());
+    if (!m) return v.trim();
+    let hex = m[1];
+    if (hex.length === 3) hex = hex.split("").map((c) => c + c).join("");
+    const r = parseInt(hex.slice(0, 2), 16) / 255, g = parseInt(hex.slice(2, 4), 16) / 255, b = parseInt(hex.slice(4, 6), 16) / 255;
+    const max = Math.max(r, g, b), min = Math.min(r, g, b), l = (max + min) / 2;
+    let h = 0, s = 0;
+    if (max !== min) {
+        const d = max - min;
+        s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+        h = max === r ? (g - b) / d + (g < b ? 6 : 0) : max === g ? (b - r) / d + 2 : (r - g) / d + 4;
+        h /= 6;
+    }
+    return `${Math.round(h * 360)} ${Math.round(s * 100)}% ${Math.round(l * 100)}%`;
+}
+
+/** Build the inline `--var` overrides for the editor root from a theme object. */
+function themeToStyle(theme?: EmailBuilderTheme): React.CSSProperties {
+    const style: Record<string, string> = {};
+    for (const key of Object.keys(theme ?? {}) as (keyof EmailBuilderTheme)[]) {
+        const value = theme![key];
+        if (!value) continue;
+        style[THEME_VARS[key]] = key === "radius" ? value : toHslChannels(value);
+    }
+    return style as React.CSSProperties;
 }
 
 const MAX_HISTORY = 50;
@@ -211,7 +286,7 @@ function cloneDoc(doc: EmailDocument): EmailDocument {
     return JSON.parse(JSON.stringify(doc)) as EmailDocument;
 }
 
-export function EmailBuilder({ initialDocument, locales, initialDocuments, defaultLocale, onChange, onSave, onBack, fieldGroups, previewSubstitute, onImageUpload, onFileUpload, canvasShadow, canManageLocks = true, customBlocks, t }: EmailBuilderProps) {
+export function EmailBuilder({ initialDocument, locales, initialDocuments, defaultLocale, onChange, onSave, onBack, fieldGroups, previewSubstitute, onImageUpload, onFileUpload, canvasShadow, canManageLocks = true, customBlocks, t, theme, dark, className }: EmailBuilderProps) {
     const { toast } = useToast();
     const tr = useMemo(() => makeTr(t), [t]);
 
@@ -879,7 +954,7 @@ export function EmailBuilder({ initialDocument, locales, initialDocuments, defau
         <UpdateBlockContext.Provider value={updateBlock}>
         <LockingContext.Provider value={canManageLocks}>
         <CustomBlocksContext.Provider value={customBlockMap}>
-        <div className="email-builder">
+        <div className={cn("email-builder", dark && "dark", className)} style={themeToStyle(theme)}>
         <DndContext sensors={sensors} collisionDetection={rectIntersection} onDragStart={handleDragStart} onDragEnd={handleDragEnd} onDragCancel={handleDragCancel}>
             <div className="flex flex-col h-[calc(100vh-140px)]">
                 {/* Toolbar */}

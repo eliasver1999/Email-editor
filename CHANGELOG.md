@@ -9,6 +9,7 @@ include breaking changes.
 
 ### Added
 
+- **Prop-based theming — `theme` / `dark` / `className`.** Pass `<EmailBuilder theme={{ primary: "#7c3aed", radius: "0.25rem", … }} />` to recolor the editor without writing CSS — colors accept hex or HSL channels (mapped to the `.email-builder` CSS variables), plus a `dark` toggle and a `className` for your own class. The CSS-variable approach still works. Exposes the `EmailBuilderTheme` type.
 - **Plain-text rendering — `renderToText(doc)`.** Produces a readable `text/plain` alternative for the multipart email (deliverability + accessibility): headings/paragraphs, `- ` lists, `text (url)` links, `label: url` buttons, `"quote" — author`, `---` dividers, image alt text; hidden blocks skipped, merge tags preserved. Custom blocks can supply plain text via an optional `toText` on `defineBlock`.
 - **Output validator — `validate(doc)`.** A dependency-free linter that flags common email pitfalls before sending: Gmail's ~102 KB clipping limit, images missing `alt`, low color contrast (WCAG AA), non-`https://` links, empty CTAs, missing subject, and leftover `{{merge_tags}}`. Returns `{ level, code, message, blockId? }[]` so you can surface issues or gate a send. See the README "Validating output" section.
 - **In-editor validation panel.** A toolbar **Check** button shows a live issue count and a panel listing all validation findings; clicking a block-scoped issue jumps to and selects that block. Surfaces `validate()` directly in the editor.

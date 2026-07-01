@@ -1,7 +1,7 @@
 // Email Builder — Public API
 // Consumer should import styles: import "email-block-builder/styles.css"
 export { EmailBuilder } from "./EmailBuilder";
-export type { EmailBuilderProps, MultiLocaleSaveMeta } from "./EmailBuilder";
+export type { EmailBuilderProps, MultiLocaleSaveMeta, EmailBuilderTheme } from "./EmailBuilder";
 export { EmailBuilderToaster } from "./ui/Toaster";
 export { renderToHtml, renderEmailHtml, exportToJson, importFromJson, defineBlock } from "./renderer/toHtml";
 export type { BlockRenderer, BlockDefinition, BlockRenderContext, RenderOptions } from "./renderer/toHtml";
