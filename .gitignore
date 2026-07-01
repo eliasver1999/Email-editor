@@ -7,3 +7,4 @@ examples/*.html
 .env
 .env.*
 *.tsbuildinfo
+.claude
