@@ -14,6 +14,15 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Editor-only placeholder for empty contentEditable blocks (e.g. a fresh Text
+   block). Shows the `data-placeholder` text while the element is empty; the
+   browser removes it as soon as the user types. */
+.email-builder [contenteditable][data-placeholder]:empty::before {
+    content: attr(data-placeholder);
+    color: hsl(var(--muted-foreground));
+    pointer-events: none;
+}
+
 .email-builder {
     /* Base */
     --background: 0 0% 100%;

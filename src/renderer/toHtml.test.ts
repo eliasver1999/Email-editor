@@ -8,6 +8,7 @@ import {
     createImageBlock,
     createHtmlBlock,
     createFileBlock,
+    createFooterBlock,
     createStarterDocument,
 } from "../defaults";
 import { DEFAULT_SETTINGS, BLOCK_CATALOG } from "../types";
@@ -145,6 +146,22 @@ describe("renderToHtml", () => {
             const html = renderToHtml(makeDoc([createBlock("heading"), createBlock("text")]));
             expect(html).not.toContain("border-top-left-radius");
             expect(html).not.toContain("border-bottom-left-radius");
+        });
+
+        it("defaults a footer's background to the email body background for consistency", () => {
+            expect(createFooterBlock().backgroundColor).toBe(DEFAULT_SETTINGS.backgroundColor);
+        });
+
+        it("starts a new text block empty (real placeholder lives in the editor, not the content)", () => {
+            expect(createTextBlock().content).toBe("");
+            const html = renderToHtml(makeDoc([createTextBlock()]));
+            expect(html).not.toContain("Type your text here");
+        });
+
+        it("keeps a merge tag as a link href through rich-text sanitization", () => {
+            const text = { ...createTextBlock(), content: '<p><a href="{{event_url}}">Details</a></p>' };
+            const html = renderToHtml(makeDoc([text]));
+            expect(html).toContain('href="{{event_url}}"');
         });
 
         it("gives a new text block default padding (not flush to the email edges)", () => {

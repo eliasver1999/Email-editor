@@ -1,5 +1,5 @@
 import { createContext, useContext } from "react";
-import type { EmailBlock } from "./types";
+import type { EmailBlock, MergeFieldGroup } from "./types";
 import type { BlockDefinition } from "./renderer/toHtml";
 
 /**
@@ -31,4 +31,39 @@ export const CustomBlocksContext = createContext<Map<string, BlockDefinition>>(n
 
 export function useCustomBlocks(): Map<string, BlockDefinition> {
     return useContext(CustomBlocksContext);
+}
+
+/**
+ * Personalization tokens (from `<EmailBuilder fieldGroups>`), shared so in-canvas
+ * widgets — e.g. the rich-text link editor — can offer a "link to a field" tag
+ * picker without prop-drilling.
+ */
+export const FieldGroupsContext = createContext<MergeFieldGroup[]>([]);
+
+export function useFieldGroups(): MergeFieldGroup[] {
+    return useContext(FieldGroupsContext);
+}
+
+/**
+ * Bridge between the in-canvas `contentEditable` blocks and the right-hand
+ * property panel. The active editable saves its element + current selection via
+ * `save`; the panel (and toolbar) then insert a merge tag at the caret or wrap
+ * the selection in a link — acting on the *real* caret instead of blindly
+ * appending. All operations are scoped by `blockId` so a stale selection from a
+ * different block is never used; each returns `false` when it couldn't act (no
+ * saved caret, or — for links — nothing selected) so callers can fall back.
+ */
+export interface EditorSelectionApi {
+    /** Remember the editable element + its current selection range for `blockId`. */
+    save: (el: HTMLElement, blockId: string) => void;
+    /** Insert `token` at the saved caret of `blockId`'s editable. */
+    insertToken: (blockId: string, token: string) => boolean;
+    /** Wrap the saved (non-collapsed) selection of `blockId`'s editable in a link. */
+    applyLink: (blockId: string, href: string) => boolean;
+}
+
+export const EditorSelectionContext = createContext<EditorSelectionApi | null>(null);
+
+export function useEditorSelection(): EditorSelectionApi | null {
+    return useContext(EditorSelectionContext);
 }

@@ -33,7 +33,8 @@ import {
 import { cn } from "../ui/utils";
 import { useTr } from "../i18n";
 import { useImageUpload, useFileUpload } from "../upload";
-import { useUpdateBlock, useCanManageLocks, useCustomBlocks } from "../editor-context";
+import { useUpdateBlock, useCanManageLocks, useCustomBlocks, useFieldGroups, useEditorSelection } from "../editor-context";
+import { LinkEditor } from "./LinkEditor";
 import { toast } from "../ui/hooks";
 
 function paddingStyle(p: Padding): React.CSSProperties {
@@ -55,6 +56,8 @@ function EditableContent({
     onCommit,
     style,
     as,
+    blockId,
+    placeholder,
 }: {
     value: string;
     editing: boolean;
@@ -65,9 +68,16 @@ function EditableContent({
     style?: React.CSSProperties;
     /** Semantic tag to render (e.g. "h1") so the canvas matches the exported email and Custom CSS selectors apply. Defaults to "div". */
     as?: keyof React.JSX.IntrinsicElements;
+    /** Owning block id — lets the property panel target this editable's caret/selection. */
+    blockId: string;
+    /** Editor-only greyed hint shown while the element is empty (see styles.css). */
+    placeholder?: string;
 }) {
     const ref = useRef<HTMLElement>(null);
+    const wrapRef = useRef<HTMLDivElement>(null);
     const [focused, setFocused] = useState(false);
+    const [linkOpen, setLinkOpen] = useState(false);
+    const selection = useEditorSelection();
     useEffect(() => {
         const el = ref.current;
         if (!el || document.activeElement === el) return;
@@ -85,25 +95,54 @@ function EditableContent({
         if (next !== value) onCommit(next);
     };
 
+    // While focused, keep the shared registry updated with this editable's caret/
+    // selection so the property panel can insert a tag at the cursor or link the
+    // selected text (see EditorSelectionContext).
+    useEffect(() => {
+        if (!editing || !focused || !selection) return;
+        const save = () => { if (ref.current) selection.save(ref.current, blockId); };
+        save();
+        document.addEventListener("selectionchange", save);
+        return () => document.removeEventListener("selectionchange", save);
+    }, [editing, focused, selection, blockId]);
+
     const Tag = (as ?? "div") as React.ElementType;
 
-    // Rich (non-plainText) blocks get a formatting toolbar while focused. Its
-    // buttons preventDefault on mousedown so the caret/selection stays here, so
-    // they never fire this element's blur — only leaving the block does.
+    // Rich (non-plainText) blocks get a formatting toolbar while focused (or while
+    // its link editor is open). Toolbar buttons preventDefault on mousedown so the
+    // selection stays; the link editor's input/select need focus, so it lives in a
+    // branch without preventDefault and the blur handler keeps the toolbar alive
+    // when focus moves into it.
     return (
-        <div style={{ position: "relative" }}>
-            {editing && !plainText && focused && (
-                <RichTextToolbar targetRef={ref} allowLists={allowLists} onChanged={() => ref.current && commit(ref.current)} />
+        <div ref={wrapRef} style={{ position: "relative" }}>
+            {editing && !plainText && (focused || linkOpen) && (
+                <RichTextToolbar
+                    targetRef={ref}
+                    blockId={blockId}
+                    allowLists={allowLists}
+                    linkOpen={linkOpen}
+                    onLinkOpenChange={setLinkOpen}
+                    onChanged={() => ref.current && commit(ref.current)}
+                />
             )}
             <Tag
                 ref={ref}
                 contentEditable={editing}
                 suppressContentEditableWarning
                 spellCheck={false}
+                data-placeholder={editing ? placeholder : undefined}
                 style={{ ...style, outline: "none", cursor: editing ? "text" : undefined }}
                 onFocus={() => setFocused(true)}
                 onInput={(e: React.FormEvent<HTMLElement>) => commit(e.currentTarget)}
-                onBlur={(e: React.FocusEvent<HTMLElement>) => { setFocused(false); commit(e.currentTarget); }}
+                onBlur={(e: React.FocusEvent<HTMLElement>) => {
+                    // Focus moving into our own toolbar/link editor (e.g. the URL
+                    // input) isn't a real exit — keep the toolbar mounted.
+                    const next = e.relatedTarget as Node | null;
+                    if (next && wrapRef.current?.contains(next)) { commit(e.currentTarget); return; }
+                    setFocused(false);
+                    setLinkOpen(false);
+                    commit(e.currentTarget);
+                }}
             />
         </div>
     );
@@ -140,12 +179,17 @@ function ToolbarButton({ label, active, onAction, children }: {
  * which fits this lib's no-heavy-editor philosophy. The committed innerHTML
  * (e.g. <b>, <i>, <a>, <ul>) is what the renderer ships to the email.
  */
-function RichTextToolbar({ targetRef, onChanged, allowLists = true }: {
+function RichTextToolbar({ targetRef, blockId, onChanged, allowLists = true, linkOpen, onLinkOpenChange }: {
     targetRef: React.RefObject<HTMLElement | null>;
+    blockId: string;
     onChanged: () => void;
     allowLists?: boolean;
+    linkOpen: boolean;
+    onLinkOpenChange: (open: boolean) => void;
 }) {
     const tr = useTr();
+    const fieldGroups = useFieldGroups();
+    const selection = useEditorSelection();
     const [active, setActive] = useState({ bold: false, italic: false, underline: false });
 
     // Reflect the active inline styles at the caret (bold/italic/underline).
@@ -174,22 +218,17 @@ function RichTextToolbar({ targetRef, onChanged, allowLists = true }: {
         onChanged();
     };
 
-    const addLink = () => {
-        const el = targetRef.current;
-        if (!el) return;
-        // window.prompt blurs the editor and may collapse the selection, so save
-        // the range first and restore it before applying the link.
-        const sel = window.getSelection();
-        const saved = sel && sel.rangeCount ? sel.getRangeAt(0).cloneRange() : null;
-        const url = window.prompt(tr("emailBuilder.richText.linkPrompt", "Link URL"), "https://");
-        if (!url) return;
-        el.focus();
-        if (saved && sel) {
-            sel.removeAllRanges();
-            sel.addRange(saved);
+    // Wrap the current selection in a link. Prefer the shared registry (restores
+    // the saved range even after the URL input stole focus); fall back to a direct
+    // createLink on the live selection. The href may be a plain URL or a merge tag.
+    const applyLink = (href: string) => {
+        const ok = selection?.applyLink(blockId, href);
+        if (!ok) {
+            const el = targetRef.current;
+            if (el) { el.focus(); document.execCommand("createLink", false, href); }
         }
-        document.execCommand("createLink", false, url);
         onChanged();
+        onLinkOpenChange(false);
     };
 
     // Float above the text, but flip below when there isn't room above (e.g. a
@@ -201,37 +240,44 @@ function RichTextToolbar({ targetRef, onChanged, allowLists = true }: {
     return (
         <div
             contentEditable={false}
-            onMouseDown={(e) => e.preventDefault()}
-            className="absolute left-0 z-50 flex items-center gap-0.5 rounded-md border border-border bg-popover p-1 text-popover-foreground shadow-md"
+            className="absolute left-0 z-50 rounded-md border border-border bg-popover p-1 text-popover-foreground shadow-md"
             style={placeBelow ? { top: "calc(100% + 4px)" } : { bottom: "calc(100% + 4px)" }}
         >
-            <ToolbarButton label={tr("emailBuilder.richText.bold", "Bold")} active={active.bold} onAction={() => exec("bold")}>
-                <Bold className="h-3.5 w-3.5" />
-            </ToolbarButton>
-            <ToolbarButton label={tr("emailBuilder.richText.italic", "Italic")} active={active.italic} onAction={() => exec("italic")}>
-                <Italic className="h-3.5 w-3.5" />
-            </ToolbarButton>
-            <ToolbarButton label={tr("emailBuilder.richText.underline", "Underline")} active={active.underline} onAction={() => exec("underline")}>
-                <Underline className="h-3.5 w-3.5" />
-            </ToolbarButton>
-            <span className="mx-0.5 h-5 w-px bg-border" />
-            <ToolbarButton label={tr("emailBuilder.richText.link", "Add link")} onAction={addLink}>
-                <Link className="h-3.5 w-3.5" />
-            </ToolbarButton>
-            {allowLists && (
-                <>
-                    <ToolbarButton label={tr("emailBuilder.richText.bulletList", "Bulleted list")} onAction={() => exec("insertUnorderedList")}>
-                        <List className="h-3.5 w-3.5" />
+            {linkOpen ? (
+                <div className="p-1">
+                    <LinkEditor fieldGroups={fieldGroups} onApply={applyLink} onCancel={() => onLinkOpenChange(false)} />
+                </div>
+            ) : (
+                <div className="flex items-center gap-0.5" onMouseDown={(e) => e.preventDefault()}>
+                    <ToolbarButton label={tr("emailBuilder.richText.bold", "Bold")} active={active.bold} onAction={() => exec("bold")}>
+                        <Bold className="h-3.5 w-3.5" />
                     </ToolbarButton>
-                    <ToolbarButton label={tr("emailBuilder.richText.numberedList", "Numbered list")} onAction={() => exec("insertOrderedList")}>
-                        <ListOrdered className="h-3.5 w-3.5" />
+                    <ToolbarButton label={tr("emailBuilder.richText.italic", "Italic")} active={active.italic} onAction={() => exec("italic")}>
+                        <Italic className="h-3.5 w-3.5" />
+                    </ToolbarButton>
+                    <ToolbarButton label={tr("emailBuilder.richText.underline", "Underline")} active={active.underline} onAction={() => exec("underline")}>
+                        <Underline className="h-3.5 w-3.5" />
                     </ToolbarButton>
                     <span className="mx-0.5 h-5 w-px bg-border" />
-                </>
+                    <ToolbarButton label={tr("emailBuilder.richText.link", "Add link")} onAction={() => onLinkOpenChange(true)}>
+                        <Link className="h-3.5 w-3.5" />
+                    </ToolbarButton>
+                    {allowLists && (
+                        <>
+                            <ToolbarButton label={tr("emailBuilder.richText.bulletList", "Bulleted list")} onAction={() => exec("insertUnorderedList")}>
+                                <List className="h-3.5 w-3.5" />
+                            </ToolbarButton>
+                            <ToolbarButton label={tr("emailBuilder.richText.numberedList", "Numbered list")} onAction={() => exec("insertOrderedList")}>
+                                <ListOrdered className="h-3.5 w-3.5" />
+                            </ToolbarButton>
+                            <span className="mx-0.5 h-5 w-px bg-border" />
+                        </>
+                    )}
+                    <ToolbarButton label={tr("emailBuilder.richText.clear", "Clear formatting")} onAction={() => exec("removeFormat")}>
+                        <RemoveFormatting className="h-3.5 w-3.5" />
+                    </ToolbarButton>
+                </div>
             )}
-            <ToolbarButton label={tr("emailBuilder.richText.clear", "Clear formatting")} onAction={() => exec("removeFormat")}>
-                <RemoveFormatting className="h-3.5 w-3.5" />
-            </ToolbarButton>
         </div>
     );
 }
@@ -356,6 +402,8 @@ function renderBlock(
                     <EditableContent
                         value={block.content}
                         editing
+                        blockId={block.id}
+                        placeholder="Type your text here..."
                         onCommit={(v) => onEditContent!(v)}
                         style={textStyle}
                     />
@@ -380,6 +428,7 @@ function renderBlock(
                     <EditableContent
                         value={block.content}
                         editing
+                        blockId={block.id}
                         allowLists={false}
                         onCommit={(v) => onEditContent!(v)}
                         style={headingStyle}
@@ -594,6 +643,7 @@ function renderBlock(
                     <EditableContent
                         value={block.content}
                         editing
+                        blockId={block.id}
                         onCommit={(v) => onEditContent!(v)}
                         style={footerStyle}
                     />
@@ -614,6 +664,7 @@ function renderBlock(
                             value={block.content}
                             editing
                             plainText
+                            blockId={block.id}
                             onCommit={(v) => onEditContent!(v)}
                             style={{
                                 color: block.color,

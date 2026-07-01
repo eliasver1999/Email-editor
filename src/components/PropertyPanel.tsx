@@ -1,10 +1,11 @@
 import { useRef, useState } from "react";
 import { EmailBlock, CustomBlock, Padding, TextBlock, HeadingBlock, ImageBlock, ButtonBlock, DividerBlock, SpacerBlock, SocialBlock, HtmlBlock, FooterBlock, QuoteBlock, ColumnsBlock, ColumnConfig, EmailSettings, MergeFieldGroup, BorderStyle, DEFAULT_BORDER, resolveButtonWidth, FileBlock } from "../types";
-import { Input, Label, Button, Slider, ScrollArea, Separator, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Popover, PopoverContent, PopoverTrigger, Tabs, TabsList, TabsTrigger, TabsContent } from "../ui/primitives";
+import { Input, Label, Button, Slider, ScrollArea, Separator, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Popover, PopoverContent, PopoverTrigger, usePopoverClose, Tabs, TabsList, TabsTrigger, TabsContent } from "../ui/primitives";
 import { CodeEditor } from "../ui/CodeEditor";
+import { LinkEditor } from "./LinkEditor";
 import { useTr } from "../i18n";
 import { useImageUpload, useFileUpload } from "../upload";
-import { useCustomBlocks } from "../editor-context";
+import { useCustomBlocks, useEditorSelection } from "../editor-context";
 import type { BlockDefinition } from "../renderer/toHtml";
 import { toast } from "../ui/hooks";
 import {
@@ -21,6 +22,7 @@ import {
     Loader2,
     Lock,
     Unlock,
+    Link,
 } from "lucide-react";
 
 /** Popover menu of personalization tokens; clicking one inserts it. */
@@ -58,6 +60,52 @@ function InsertFieldMenu({ fieldGroups, onInsert }: { fieldGroups: MergeFieldGro
     );
 }
 
+/**
+ * "Link selected text" for text/footer blocks: select a word/phrase in the block,
+ * then set a URL or a merge tag as its link. Uses the shared selection registry so
+ * it acts on the real selection inside the block being edited.
+ */
+function LinkSection({ blockId, fieldGroups }: { blockId: string; fieldGroups?: MergeFieldGroup[] }) {
+    const tr = useTr();
+    return (
+        <>
+            <Popover>
+                <PopoverTrigger asChild>
+                    <Button variant="outline" size="sm" className="h-7 px-2 text-xs gap-1">
+                        <Link className="h-3 w-3" />
+                        {tr("emailBuilder.prop.linkSelected", "Link selected text")}
+                    </Button>
+                </PopoverTrigger>
+                <PopoverContent align="start" className="p-2">
+                    <PanelLinkForm blockId={blockId} fieldGroups={fieldGroups} />
+                </PopoverContent>
+            </Popover>
+            <p className="mt-1 text-[10px] leading-snug text-muted-foreground">
+                {tr("emailBuilder.prop.linkSelectedHint", "Select a word or phrase in the block first, then add a link or field tag.")}
+            </p>
+        </>
+    );
+}
+
+/** The link form inside LinkSection's popover; applies the link and closes. */
+function PanelLinkForm({ blockId, fieldGroups }: { blockId: string; fieldGroups?: MergeFieldGroup[] }) {
+    const tr = useTr();
+    const selection = useEditorSelection();
+    const close = usePopoverClose();
+    return (
+        <LinkEditor
+            fieldGroups={fieldGroups}
+            onApply={(href) => {
+                if (!selection?.applyLink(blockId, href)) {
+                    toast({ title: tr("emailBuilder.richText.selectFirst", "Select some text in the block first") });
+                }
+                close();
+            }}
+            onCancel={close}
+        />
+    );
+}
+
 interface PropertyPanelProps {
     block: EmailBlock | null;
     onUpdate: (id: string, updates: Partial<EmailBlock>) => void;
@@ -75,6 +123,7 @@ interface PropertyPanelProps {
 export function PropertyPanel({ block, onUpdate, onDelete, onDuplicate, onToggleVisibility, onToggleLock, canManageLocks = true, fieldGroups }: PropertyPanelProps) {
     const tr = useTr();
     const customBlocks = useCustomBlocks();
+    const selection = useEditorSelection();
     if (!block) {
         return (
             <div className="h-full flex items-center justify-center p-4 text-center">
@@ -155,10 +204,22 @@ export function PropertyPanel({ block, onUpdate, onDelete, onDuplicate, onToggle
                             <h4 className="text-xs font-medium text-muted-foreground mb-2">{tr("emailBuilder.prop.personalization", "PERSONALIZATION")}</h4>
                             <InsertFieldMenu
                                 fieldGroups={fieldGroups}
-                                onInsert={(token) =>
-                                    update({ content: block.content ? `${block.content} ${token}` : token })
-                                }
+                                onInsert={(token) => {
+                                    // Insert at the caret of the block being edited; if the
+                                    // block isn't currently focused, append as a fallback.
+                                    if (selection?.insertToken(block.id, token)) return;
+                                    const content = (block as { content?: string }).content;
+                                    update({ content: content ? `${content} ${token}` : token });
+                                }}
                             />
+                        </div>
+                    )}
+
+                    {/* Make the selected word/phrase a link (URL or a merge tag). */}
+                    {(block.type === "text" || block.type === "footer") && (
+                        <div>
+                            <h4 className="text-xs font-medium text-muted-foreground mb-2">{tr("emailBuilder.prop.link", "LINK")}</h4>
+                            <LinkSection blockId={block.id} fieldGroups={fieldGroups} />
                         </div>
                     )}
 

@@ -64,7 +64,10 @@ export function createTextBlock(): TextBlock {
     return {
         id: nanoid(8),
         type: "text",
-        content: "<p>Type your text here...</p>",
+        // Empty by default: the editor shows a real placeholder ("Type your text
+        // here…") that vanishes on typing, so an untouched block ships nothing
+        // rather than literal placeholder text.
+        content: "",
         color: "#333333",
         fontSize: 14,
         fontFamily: "Arial, sans-serif",
@@ -220,7 +223,10 @@ export function createFooterBlock(): FooterBlock {
         fontSize: 12,
         textAlign: "center",
         padding: { top: 20, right: 20, bottom: 20, left: 20 },
-        backgroundColor: "#f9fafb",
+        // Match the email body background so the footer blends in by default. When
+        // a footer is added into a live document, EmailBuilder overrides this with
+        // the document's actual body background for consistency.
+        backgroundColor: DEFAULT_SETTINGS.backgroundColor,
     };
 }
 

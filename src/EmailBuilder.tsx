@@ -78,7 +78,7 @@ import { PropertyPanel, EmailSettingsPanel } from "./components/PropertyPanel";
 import { exportToJson, importFromJson, renderEmailHtml, type BlockDefinition } from "./renderer/toHtml";
 import { BuilderI18nContext, makeTr } from "./i18n";
 import { ImageUploadContext, FileUploadContext, type ImageUploadFn, type FileUploadFn } from "./upload";
-import { UpdateBlockContext, LockingContext, CustomBlocksContext } from "./editor-context";
+import { UpdateBlockContext, LockingContext, CustomBlocksContext, FieldGroupsContext, EditorSelectionContext, type EditorSelectionApi } from "./editor-context";
 
 /**
  * Extra payload passed to `onSave` as the third argument when the editor is in
@@ -350,6 +350,42 @@ export function EmailBuilder({ initialDocument, locales, initialDocuments, defau
         useSensor(PointerSensor, { activationConstraint: { distance: 5 } })
     );
 
+    // Bridge between the in-canvas contentEditable blocks and the property panel:
+    // the active editable saves its element + selection here; the panel then
+    // inserts a merge tag at the caret or links the selected text. Ref-backed so
+    // it never triggers re-renders (see EditorSelectionApi).
+    const selectionRef = useRef<{ el: HTMLElement; blockId: string; range: Range | null } | null>(null);
+    const editorSelection = useMemo<EditorSelectionApi>(() => ({
+        save: (el, blockId) => {
+            // Keep the last valid range unless the current selection is inside `el`.
+            let range: Range | null = selectionRef.current?.el === el ? selectionRef.current.range : null;
+            const sel = window.getSelection();
+            if (sel && sel.rangeCount) {
+                const r = sel.getRangeAt(0);
+                if (el.contains(r.commonAncestorContainer)) range = r.cloneRange();
+            }
+            selectionRef.current = { el, blockId, range };
+        },
+        insertToken: (blockId, token) => {
+            const s = selectionRef.current;
+            if (!s || s.blockId !== blockId || !s.el.isConnected) return false;
+            s.el.focus();
+            if (s.range) {
+                const sel = window.getSelection();
+                if (sel) { sel.removeAllRanges(); sel.addRange(s.range); }
+            }
+            return window.document.execCommand("insertText", false, token);
+        },
+        applyLink: (blockId, href) => {
+            const s = selectionRef.current;
+            if (!s || s.blockId !== blockId || !s.el.isConnected || !s.range || s.range.collapsed) return false;
+            s.el.focus();
+            const sel = window.getSelection();
+            if (sel) { sel.removeAllRanges(); sel.addRange(s.range); }
+            return window.document.execCommand("createLink", false, href);
+        },
+    }), []);
+
     // --- Document mutations ---
 
     // Commit a new document. `coalesce` merges rapid successive edits (text
@@ -420,6 +456,9 @@ export function EmailBuilder({ initialDocument, locales, initialDocuments, defau
 
     const addBlock = useCallback((type: string, index?: number) => {
         const block = createAnyBlock(type);
+        // A footer blends with the email body by default — match the current body
+        // background (which the user may have customized) for visual consistency.
+        if (type === "footer") (block as { backgroundColor: string }).backgroundColor = document.settings.backgroundColor;
         updateDocument((doc) => {
             const blocks = [...doc.blocks];
             // Footer always goes to the very end
@@ -435,7 +474,7 @@ export function EmailBuilder({ initialDocument, locales, initialDocuments, defau
             return { ...doc, blocks };
         });
         setSelectedBlockId(block.id);
-    }, [updateDocument, createAnyBlock]);
+    }, [updateDocument, createAnyBlock, document.settings.backgroundColor]);
 
     // Helper: apply a transform to a block by ID, searching top-level and inside columns
     const mapBlocksDeep = useCallback((blocks: EmailBlock[], id: string, fn: (b: EmailBlock) => EmailBlock | null): EmailBlock[] => {
@@ -954,6 +993,8 @@ export function EmailBuilder({ initialDocument, locales, initialDocuments, defau
         <UpdateBlockContext.Provider value={updateBlock}>
         <LockingContext.Provider value={canManageLocks}>
         <CustomBlocksContext.Provider value={customBlockMap}>
+        <FieldGroupsContext.Provider value={fieldGroups ?? []}>
+        <EditorSelectionContext.Provider value={editorSelection}>
         <div className={cn("email-builder", dark && "dark", className)} style={themeToStyle(theme)}>
         <DndContext sensors={sensors} collisionDetection={rectIntersection} onDragStart={handleDragStart} onDragEnd={handleDragEnd} onDragCancel={handleDragCancel}>
             <div className="flex flex-col h-[calc(100vh-140px)]">
@@ -1300,6 +1341,8 @@ export function EmailBuilder({ initialDocument, locales, initialDocuments, defau
             </div>
         </Dialog>
         </div>
+        </EditorSelectionContext.Provider>
+        </FieldGroupsContext.Provider>
         </CustomBlocksContext.Provider>
         </LockingContext.Provider>
         </UpdateBlockContext.Provider>
