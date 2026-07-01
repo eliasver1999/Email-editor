@@ -7,23 +7,45 @@ include breaking changes.
 
 ## [Unreleased]
 
+_Nothing yet._
+
+## [0.8.0] - 2026-07-01
+
 ### Added
 
 - **Prop-based theming — `theme` / `dark` / `className`.** Pass `<EmailBuilder theme={{ primary: "#7c3aed", radius: "0.25rem", … }} />` to recolor the editor without writing CSS — colors accept hex or HSL channels (mapped to the `.email-builder` CSS variables), plus a `dark` toggle and a `className` for your own class. The CSS-variable approach still works. Exposes the `EmailBuilderTheme` type.
 - **Plain-text rendering — `renderToText(doc)`.** Produces a readable `text/plain` alternative for the multipart email (deliverability + accessibility): headings/paragraphs, `- ` lists, `text (url)` links, `label: url` buttons, `"quote" — author`, `---` dividers, image alt text; hidden blocks skipped, merge tags preserved. Custom blocks can supply plain text via an optional `toText` on `defineBlock`.
 - **Output validator — `validate(doc)`.** A dependency-free linter that flags common email pitfalls before sending: Gmail's ~102 KB clipping limit, images missing `alt`, low color contrast (WCAG AA), non-`https://` links, empty CTAs, missing subject, and leftover `{{merge_tags}}`. Returns `{ level, code, message, blockId? }[]` so you can surface issues or gate a send. See the README "Validating output" section.
 - **In-editor validation panel.** A toolbar **Check** button shows a live issue count and a panel listing all validation findings; clicking a block-scoped issue jumps to and selects that block. Surfaces `validate()` directly in the editor.
+
+## [0.7.0] - 2026-07-01
+
+### Added
+
 - **Per-block CSS hooks.** Every block's row now carries `eb-block` + `eb-block-<type>` classes, and each block has an optional **CSS class** field (Properties panel), so document Custom CSS can target a whole type (`.eb-block-button a { … }`) or one specific block (`.promo-cta { … }`) — applied live on the canvas and in the exported email. (User class is sanitized to safe characters.)
 - **Custom CSS autocomplete.** Typing `.` in the Custom CSS editor suggests the available block classes for the current design — each block type in use, your per-block classes, and the inner-element variant (`.eb-block-button a`, `.eb-block-text p`, …) so it's easy to target the element rather than the row.
+- **Library logo / brand mark** (`assets/logo.svg`), also shown on the demo landing page.
+
+### Fixed
+
+- **Code-editor autocomplete/hover popups no longer get clipped** by the editor's box or the side panel — they now render in a fixed overflow layer (`fixedOverflowWidgets`).
+
+## [0.6.0] - 2026-07-01
+
+### Added
+
 - **Editable HTML output.** The toolbar **"HTML"** tab is now editable — hand-edit the compiled email HTML and it becomes what gets saved / exported / previewed (a manual override). A banner shows when you're overriding, with a **"Regenerate from blocks"** button to revert; editing any block automatically regenerates the HTML and discards the manual edits.
 
 ### Changed
 
 - The **Custom HTML block editor is taller** (360px) with clear **HTML | CSS** tabs, so raw HTML/CSS is easier to read and edit.
+- The demo landing page now shows the editor **full-width**.
 
 ### Removed
 
 - The **Logo** block — it duplicated the Image block. Use an **Image** block instead (the default starter layout now uses a small centered image for the top slot). Saved documents still open, but any block with `type: "logo"` won't render — re-add it as an image.
+
+## [0.5.3] - 2026-06-30
 
 ### Changed
 
@@ -32,7 +54,10 @@ include breaking changes.
 ### Fixed
 
 - **Content border & corner radius now render in the sent email.** The content table used `border-collapse: collapse`, which makes clients ignore `border-radius` and lets row backgrounds (e.g. the footer) bleed over the side border — so the radius was lost and the border looked broken. Switched the content table to `border-collapse: separate` (with `border-spacing: 0`), so the radius applies and the border wraps the whole content area.
-- **Code-editor autocomplete/hover popups no longer get clipped** by the editor's box or the side panel — they now render in a fixed overflow layer (`fixedOverflowWidgets`).
+
+## [0.5.2] - 2026-06-30
+
+- Maintenance release; no functional changes.
 
 ## [0.5.1] - 2026-06-26
 
@@ -140,7 +165,12 @@ Initial public release.
 - No dark-mode handling or plain-text / multipart alternative yet.
 - Generated HTML has not been validated across the full email-client matrix — smoke-test your own templates (see the README).
 
-[Unreleased]: https://github.com/eliasver1999/Email-editor/compare/v0.5.1...HEAD
+[Unreleased]: https://github.com/eliasver1999/Email-editor/compare/v0.8.0...HEAD
+[0.8.0]: https://github.com/eliasver1999/Email-editor/compare/v0.7.0...v0.8.0
+[0.7.0]: https://github.com/eliasver1999/Email-editor/compare/v0.6.0...v0.7.0
+[0.6.0]: https://github.com/eliasver1999/Email-editor/compare/v0.5.3...v0.6.0
+[0.5.3]: https://github.com/eliasver1999/Email-editor/compare/v0.5.2...v0.5.3
+[0.5.2]: https://github.com/eliasver1999/Email-editor/compare/v0.5.1...v0.5.2
 [0.5.1]: https://github.com/eliasver1999/Email-editor/compare/v0.5.0...v0.5.1
 [0.5.0]: https://github.com/eliasver1999/Email-editor/compare/v0.4.3...v0.5.0
 [0.4.3]: https://github.com/eliasver1999/Email-editor/compare/v0.4.2...v0.4.3
