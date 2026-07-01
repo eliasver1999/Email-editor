@@ -33,9 +33,15 @@ import {
     Languages,
     Check,
     CopyPlus,
+    ShieldCheck,
+    AlertTriangle,
+    AlertOctagon,
+    Info,
+    CircleCheck,
 } from "lucide-react";
 import { cn } from "./ui/utils";
 import { useToast, useUnsavedChanges } from "./ui/hooks";
+import { validate } from "./validate";
 import { CodeEditor } from "./ui/CodeEditor";
 
 import { EmailBlock, EmailDocument, EmailLocale, EmailSettings, BlockType, ColumnsBlock, MergeFieldGroup, DEFAULT_SETTINGS, BLOCK_CATALOG } from "./types";
@@ -163,6 +169,25 @@ function LocaleMenuItem({ label, active, onSelect }: { label: string; active: bo
         >
             <span>{label}</span>
             {active && <Check className="h-3.5 w-3.5 shrink-0 text-primary" />}
+        </button>
+    );
+}
+
+/** A row in the toolbar's Validation panel; clicking a block-scoped issue selects that block. */
+function ValidateRow({ icon, message, canSelect, onSelect }: { icon: React.ReactNode; message: string; canSelect: boolean; onSelect: () => void }) {
+    const close = usePopoverClose();
+    return (
+        <button
+            type="button"
+            disabled={!canSelect}
+            onClick={() => { onSelect(); close(); }}
+            className={cn(
+                "flex w-full items-start gap-2 rounded px-2 py-1.5 text-left text-xs",
+                canSelect ? "cursor-pointer hover:bg-accent hover:text-accent-foreground" : "cursor-default",
+            )}
+        >
+            {icon}
+            <span className="leading-snug">{message}</span>
         </button>
     );
 }
@@ -770,6 +795,14 @@ export function EmailBuilder({ initialDocument, locales, initialDocuments, defau
         return out;
     }, [document.blocks]);
 
+    // Live validation of the current document, surfaced in the toolbar's Check panel.
+    const validationIssues = useMemo(() => validate(document, { blocks: customBlocks }), [document, customBlocks]);
+    const worstLevel = validationIssues.some((i) => i.level === "error")
+        ? "error"
+        : validationIssues.some((i) => i.level === "warning")
+            ? "warning"
+            : validationIssues.length > 0 ? "info" : "ok";
+
     // --- Keyboard shortcuts ---
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
@@ -959,6 +992,47 @@ export function EmailBuilder({ initialDocument, locales, initialDocuments, defau
                                 <MoreMenuItem icon={<Upload className="h-3.5 w-3.5" />} label={tr("emailBuilder.importDesign", "Import design (JSON)")} onClick={handleImportJson} />
                                 <MoreMenuItem icon={<Download className="h-3.5 w-3.5" />} label={tr("emailBuilder.exportDesign", "Export design (JSON)")} onClick={handleExportJson} />
                                 <MoreMenuItem icon={<Code className="h-3.5 w-3.5" />} label={tr("emailBuilder.downloadHtml", "Download HTML")} onClick={handleExportHtml} />
+                            </PopoverContent>
+                        </Popover>
+                        <Popover>
+                            <PopoverTrigger asChild>
+                                <Button variant="ghost" size="sm" className="h-7 px-2 gap-1 text-xs" title={tr("emailBuilder.validate", "Check for issues")}>
+                                    <ShieldCheck className={cn("h-3.5 w-3.5", worstLevel === "warning" && "text-amber-500", worstLevel === "error" && "text-red-500", worstLevel === "ok" && "text-emerald-500")} />
+                                    {tr("emailBuilder.check", "Check")}
+                                    {validationIssues.length > 0 && (
+                                        <span className={cn(
+                                            "ml-0.5 inline-flex items-center justify-center rounded-full px-1.5 text-[10px] font-semibold text-white",
+                                            worstLevel === "error" ? "bg-red-500" : worstLevel === "warning" ? "bg-amber-500" : "bg-muted-foreground",
+                                        )}>
+                                            {validationIssues.length}
+                                        </span>
+                                    )}
+                                </Button>
+                            </PopoverTrigger>
+                            <PopoverContent align="end" className="w-80 p-0">
+                                <div className="px-3 py-2 border-b text-xs font-semibold">{tr("emailBuilder.validation", "Validation")}</div>
+                                {validationIssues.length === 0 ? (
+                                    <div className="flex items-center gap-2 px-3 py-4 text-xs text-muted-foreground">
+                                        <CircleCheck className="h-4 w-4 text-emerald-500 shrink-0" />
+                                        {tr("emailBuilder.noIssues", "No issues found — looks good to send.")}
+                                    </div>
+                                ) : (
+                                    <div className="max-h-72 overflow-auto p-1">
+                                        {validationIssues.map((issue, i) => {
+                                            const LvlIcon = issue.level === "error" ? AlertOctagon : issue.level === "warning" ? AlertTriangle : Info;
+                                            const color = issue.level === "error" ? "text-red-500" : issue.level === "warning" ? "text-amber-500" : "text-muted-foreground";
+                                            return (
+                                                <ValidateRow
+                                                    key={i}
+                                                    icon={<LvlIcon className={cn("h-3.5 w-3.5 mt-0.5 shrink-0", color)} />}
+                                                    message={issue.message}
+                                                    canSelect={!!issue.blockId}
+                                                    onSelect={() => { if (issue.blockId) { setViewMode("edit"); setSelectedBlockId(issue.blockId); } }}
+                                                />
+                                            );
+                                        })}
+                                    </div>
+                                )}
                             </PopoverContent>
                         </Popover>
                         <Button variant="ghost" size="sm" className="h-7 px-2 gap-1 text-xs" onClick={() => setSelectedBlockId(null)} title={tr("emailBuilder.settings", "Email settings")}>
