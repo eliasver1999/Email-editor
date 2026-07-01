@@ -251,6 +251,29 @@ npm run build && npm run email:sample   # writes examples/sample-email.html
 
 Open it in a browser, then send it through your ESP — or paste it into Litmus / Email on Acid — and check at least Gmail (web + app), Outlook (Windows desktop), Apple Mail, and iOS Mail. In the editor, the **HTML** tab and the `onSave` callback both hand you this same exported HTML.
 
+## Validating output
+
+`validate(doc)` lints a document against common email pitfalls before you send — so you catch problems without round-tripping through a testing service:
+
+```tsx
+import { validate } from "email-block-builder";
+
+const issues = validate(document); // ValidationIssue[] — empty means all clear
+for (const i of issues) console.log(`[${i.level}] ${i.code}: ${i.message}`, i.blockId);
+
+// gate a send on it:
+if (issues.some((i) => i.level === "error")) throw new Error("Fix email issues first");
+```
+
+Each issue is `{ level: "error" | "warning" | "info", code, message, blockId? }`. Current checks:
+
+- **Gmail clipping** — rendered HTML over ~102 KB (`size.gmail-clip`).
+- **Accessibility** — images missing `alt` (`image.missing-alt`); text/button color contrast below WCAG AA 4.5:1 (`contrast.low`).
+- **Links** — non-`https://` links (`link.insecure`); empty CTA targets (`link.empty`).
+- **Send-time** — no subject set (`subject.missing`); leftover `{{merge_tags}}` in the output (`token.unresolved`).
+
+Pass `validate(doc, { html })` to lint a specific rendered string, or `{ blocks }` (custom-block renderers) so the size check is accurate.
+
 ## Status & limitations
 
 This is an early **0.x** release; the API may change between minor versions.
