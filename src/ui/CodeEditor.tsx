@@ -9,6 +9,16 @@ const MonacoEditor = lazy(() => import("@monaco-editor/react"));
 
 type Language = "html" | "css";
 
+/** A class/selector suggestion offered in the editor's autocomplete (after `.`). */
+export interface EditorCompletion {
+    /** Displayed label (shown with a leading dot). */
+    label: string;
+    /** Text inserted after the typed `.` (defaults to `label`). */
+    insertText?: string;
+    /** Small grey hint shown next to the suggestion. */
+    detail?: string;
+}
+
 interface CodeEditorProps {
     value: string;
     /** Omit for a read-only viewer. */
@@ -21,6 +31,8 @@ interface CodeEditorProps {
     ariaLabel?: string;
     /** Wrapper classes; defaults to a bordered, rounded box. */
     className?: string;
+    /** Extra class-name completions offered after typing `.` (only used with Monaco). */
+    completions?: EditorCompletion[];
 }
 
 function isDark(): boolean {
@@ -52,7 +64,7 @@ class MonacoBoundary extends Component<{ fallback: ReactNode; children: ReactNod
     }
 }
 
-export function CodeEditor({ value, onChange, language, height = 240, readOnly, ariaLabel, className }: CodeEditorProps) {
+export function CodeEditor({ value, onChange, language, height = 240, readOnly, ariaLabel, className, completions }: CodeEditorProps) {
     // A CSS-length height (e.g. "100%") means "fill the parent". Monaco's
     // automaticLayout is unreliable with percentage heights — it can measure its
     // container as 0 at creation, render at its initial 5px, and never recover
@@ -63,6 +75,12 @@ export function CodeEditor({ value, onChange, language, height = 240, readOnly, 
     const wrapperRef = useRef<HTMLDivElement>(null);
     const editorRef = useRef<{ layout: () => void } | null>(null);
     const [measured, setMeasured] = useState(0);
+    // Latest completions, read by the Monaco provider so it stays current.
+    const completionsRef = useRef(completions);
+    completionsRef.current = completions;
+    const providerRef = useRef<{ dispose: () => void } | null>(null);
+    // Dispose the registered completion provider when this editor unmounts.
+    useEffect(() => () => { providerRef.current?.dispose(); providerRef.current = null; }, []);
 
     // Monaco can measure its container as ~0 at creation (it's often mounted
     // inside a tab/panel that hasn't laid out yet), render at its initial 5px,
@@ -94,12 +112,37 @@ export function CodeEditor({ value, onChange, language, height = 240, readOnly, 
                         language={language}
                         value={value}
                         onChange={onChange ? (v) => onChange(v ?? "") : undefined}
-                        onMount={(editor) => {
+                        onMount={(editor, monaco) => {
                             editorRef.current = editor;
                             // The container may still be sizing when Monaco mounts; nudge a
                             // relayout across a few frames so it fills its box instead of
                             // sticking at the initial 5px.
                             [0, 60, 200].forEach((d) => setTimeout(() => editor.layout(), d));
+                            // Offer the host's class suggestions after `.` (e.g. block hooks).
+                            if (completionsRef.current && !providerRef.current) {
+                                providerRef.current = monaco.languages.registerCompletionItemProvider(language, {
+                                    triggerCharacters: ["."],
+                                    provideCompletionItems(model: any, position: any) {
+                                        const list = completionsRef.current ?? [];
+                                        const word = model.getWordUntilPosition(position);
+                                        const range = {
+                                            startLineNumber: position.lineNumber,
+                                            endLineNumber: position.lineNumber,
+                                            startColumn: word.startColumn,
+                                            endColumn: word.endColumn,
+                                        };
+                                        return {
+                                            suggestions: list.map((c) => ({
+                                                label: `.${c.label}`,
+                                                kind: monaco.languages.CompletionItemKind.Class,
+                                                insertText: c.insertText ?? c.label,
+                                                detail: c.detail,
+                                                range,
+                                            })),
+                                        };
+                                    },
+                                });
+                            }
                         }}
                         theme={isDark() ? "vs-dark" : "light"}
                         options={{

@@ -742,6 +742,34 @@ export function EmailBuilder({ initialDocument, locales, initialDocuments, defau
         [sourceHtml, previewSubstitute],
     );
 
+    // Class suggestions for the Custom CSS editor's autocomplete: the block-type
+    // hooks in use, each block's custom class, and the inner-element variant
+    // (e.g. `.eb-block-button a`) so users target the element, not the row.
+    const cssClassSuggestions = useMemo(() => {
+        const EL: Record<string, string> = { button: "a", file: "a", image: "img", text: "p", heading: "h1", footer: "p", social: "a", quote: "blockquote" };
+        const types = new Set<string>();
+        const customs: { cls: string; type: string }[] = [];
+        const walk = (blocks: EmailBlock[]) => {
+            for (const b of blocks) {
+                types.add(b.type);
+                const cn = (b.className ?? "").trim().split(/\s+/).filter(Boolean)[0];
+                if (cn) customs.push({ cls: cn, type: b.type });
+                if (b.type === "columns") (b as ColumnsBlock).columns.forEach((c) => walk(c.blocks));
+            }
+        };
+        walk(document.blocks);
+        const out: { label: string; insertText?: string; detail?: string }[] = [{ label: "eb-block", detail: "every block" }];
+        for (const t of [...types].sort()) {
+            out.push({ label: `eb-block-${t}`, detail: `all ${t} blocks` });
+            if (EL[t]) out.push({ label: `eb-block-${t} ${EL[t]}`, insertText: `eb-block-${t} ${EL[t]}`, detail: `the ${t}'s <${EL[t]}>` });
+        }
+        for (const { cls, type } of customs) {
+            out.push({ label: cls, detail: "your block class" });
+            if (EL[type]) out.push({ label: `${cls} ${EL[type]}`, insertText: `${cls} ${EL[type]}`, detail: `your block's <${EL[type]}>` });
+        }
+        return out;
+    }, [document.blocks]);
+
     // --- Keyboard shortcuts ---
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
@@ -986,7 +1014,7 @@ export function EmailBuilder({ initialDocument, locales, initialDocuments, defau
                                     fieldGroups={fieldGroups}
                                 />
                             ) : (
-                                <EmailSettingsPanel settings={document.settings} onUpdate={updateSettings} />
+                                <EmailSettingsPanel settings={document.settings} onUpdate={updateSettings} cssClassSuggestions={cssClassSuggestions} />
                             )}
                         </div>
                     </div>

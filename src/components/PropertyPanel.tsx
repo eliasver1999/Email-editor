@@ -759,9 +759,11 @@ function ColumnsProps({ block, update }: { block: ColumnsBlock; update: (u: Part
 export function EmailSettingsPanel({
     settings,
     onUpdate,
+    cssClassSuggestions,
 }: {
     settings: EmailSettings;
     onUpdate: (u: Partial<EmailSettings>) => void;
+    cssClassSuggestions?: { label: string; insertText?: string; detail?: string }[];
 }) {
     const tr = useTr();
     const border = settings.contentBorder ?? DEFAULT_BORDER;
@@ -831,6 +833,7 @@ export function EmailSettingsPanel({
                             value={settings.customCss ?? ""}
                             onChange={(customCss) => onUpdate({ customCss })}
                             height={180}
+                            completions={cssClassSuggestions}
                             ariaLabel={tr("emailBuilder.settingsPanel.customCss", "Custom CSS")}
                         />
                     </div>

@@ -10,6 +10,7 @@ include breaking changes.
 ### Added
 
 - **Per-block CSS hooks.** Every block's row now carries `eb-block` + `eb-block-<type>` classes, and each block has an optional **CSS class** field (Properties panel), so document Custom CSS can target a whole type (`.eb-block-button a { … }`) or one specific block (`.promo-cta { … }`) — applied live on the canvas and in the exported email. (User class is sanitized to safe characters.)
+- **Custom CSS autocomplete.** Typing `.` in the Custom CSS editor suggests the available block classes for the current design — each block type in use, your per-block classes, and the inner-element variant (`.eb-block-button a`, `.eb-block-text p`, …) so it's easy to target the element rather than the row.
 - **Editable HTML output.** The toolbar **"HTML"** tab is now editable — hand-edit the compiled email HTML and it becomes what gets saved / exported / previewed (a manual override). A banner shows when you're overriding, with a **"Regenerate from blocks"** button to revert; editing any block automatically regenerates the HTML and discards the manual edits.
 
 ### Changed
