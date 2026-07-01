@@ -87,9 +87,9 @@ The exported HTML keeps the raw `{{tokens}}` so your backend does the final subs
 
 ## Image & file uploads
 
-Image/logo fields and the **File / Download** block take a URL by default. Provide an uploader and the builder adds an upload button (with drag-and-drop): it hands you the picked/dropped `File`, you upload it wherever you store assets, and return the hosted URL.
+Image fields and the **File / Download** block take a URL by default. Provide an uploader and the builder adds an upload button (with drag-and-drop): it hands you the picked/dropped `File`, you upload it wherever you store assets, and return the hosted URL.
 
-- `onImageUpload` — images/logos (`<img src>`).
+- `onImageUpload` — image fields (`<img src>`).
 - `onFileUpload` — the File/Download block, **any** file type (the URL becomes the link). Falls back to `onImageUpload` when omitted, so a single S3 handler serves both.
 
 ```tsx
@@ -173,7 +173,7 @@ Pass a `locales` list to keep a **separate design per language**. A switcher app
 | `defaultLocale` | `string` | Which language is selected on load (defaults to the first in `locales`). |
 | `fieldGroups` | `MergeFieldGroup[]` | Merge-tag groups available to insert. |
 | `previewSubstitute` | `(html) => string` | Resolve `{{tokens}}` to sample values in the live preview. |
-| `onImageUpload` | `(file) => Promise<string>` | Upload picked images and return a hosted URL; adds an upload button to image/logo/thumbnail fields. Omit for URL-only. |
+| `onImageUpload` | `(file) => Promise<string>` | Upload picked images and return a hosted URL; adds an upload button to image/thumbnail fields. Omit for URL-only. |
 | `onFileUpload` | `(file) => Promise<string>` | Upload any file for the **File / Download** block and return a hosted URL. Falls back to `onImageUpload` when omitted — one S3 handler serves both. Omit both for URL-only. |
 | `canManageLocks` | `boolean` | Full editor (default `true`). `false` = restricted editor: locked blocks are read-only. |
 | `customBlocks` | `BlockDefinition[]` | Custom block types from `defineBlock` (see [Custom blocks](#custom-blocks-plugin-api)). |

@@ -110,7 +110,7 @@ export interface EmailBuilderProps {
     onBack?: () => void;
     /** Personalization tokens (e.g. from useTemplateFields) for the insert-field menu. */
     fieldGroups?: MergeFieldGroup[];
-    /** Upload handler for image/logo/thumbnail fields. Receives the picked File, returns a hosted URL. Omit to keep fields URL-only. */
+    /** Upload handler for image/thumbnail fields. Receives the picked File, returns a hosted URL. Omit to keep fields URL-only. */
     onImageUpload?: ImageUploadFn;
     /** Upload handler for the File/Download block (any file type). Receives the picked File, returns a hosted URL. Falls back to `onImageUpload` when omitted. */
     onFileUpload?: FileUploadFn;

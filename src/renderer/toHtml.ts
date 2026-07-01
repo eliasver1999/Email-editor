@@ -15,7 +15,6 @@ import {
     ColumnsBlock,
     SocialBlock,
     HtmlBlock,
-    LogoBlock,
     FooterBlock,
     QuoteBlock,
     FileBlock,
@@ -337,20 +336,6 @@ ${innerBlocks}
                 })
                 .join("");
             return ctx.wrapRow(`<div style="text-align:${block.align};">${links}</div>`);
-        },
-    }),
-    defineBlock<LogoBlock>({
-        type: "logo",
-        toHtml: (block, ctx) => {
-            const lb = block.border ?? DEFAULT_BORDER;
-            const lbCss =
-                (lb.width > 0 && lb.style !== "none" ? `border:${lb.width}px ${lb.style} ${lb.color};` : "") +
-                (lb.radius > 0 ? `border-radius:${lb.radius}px;` : "");
-            const img = block.src
-                ? `<img src="${ctx.escapeHtml(block.src)}" alt="${ctx.escapeHtml(block.alt)}" width="${block.width}" style="display:inline-block;max-width:100%;${lbCss}" />`
-                : "";
-            const linked = block.href ? `<a href="${ctx.escapeHtml(block.href)}" target="_blank">${img}</a>` : img;
-            return ctx.wrapRow(`<div style="text-align:${block.align};">${linked}</div>`);
         },
     }),
     defineBlock<FooterBlock>({

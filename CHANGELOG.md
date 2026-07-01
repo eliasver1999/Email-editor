@@ -7,6 +7,10 @@ include breaking changes.
 
 ## [Unreleased]
 
+### Removed
+
+- The **Logo** block — it duplicated the Image block. Use an **Image** block instead (the default starter layout now uses a small centered image for the top slot). Saved documents still open, but any block with `type: "logo"` won't render — re-add it as an image.
+
 ### Changed
 
 - New **text blocks** start with default padding (`8px` vertical / `24px` horizontal) so body text isn't flush against the email edges. Adjust per-block in the Properties panel.

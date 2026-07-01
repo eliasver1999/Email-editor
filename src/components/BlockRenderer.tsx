@@ -578,46 +578,6 @@ function renderBlock(
             );
         }
 
-        case "logo":
-            return (
-                <div style={{ textAlign: block.align }}>
-                    {block.src ? (
-                        <a href={isEditing ? undefined : block.href || undefined}>
-                            <img
-                                src={block.src}
-                                alt={block.alt}
-                                style={{
-                                    width: `${block.width}px`,
-                                    maxWidth: "100%",
-                                    display: "inline-block",
-                                    border: block.border && block.border.width > 0 ? `${block.border.width}px ${block.border.style} ${block.border.color}` : undefined,
-                                    borderRadius: block.border && block.border.radius > 0 ? block.border.radius : undefined,
-                                }}
-                            />
-                        </a>
-                    ) : isEditing ? (
-                        <ImageUploadPlaceholder blockId={block.id} />
-                    ) : (
-                        <div
-                            style={{
-                                width: `${block.width}px`,
-                                height: "60px",
-                                backgroundColor: "#f3f4f6",
-                                display: "inline-flex",
-                                alignItems: "center",
-                                justifyContent: "center",
-                                borderRadius: "8px",
-                                border: "2px dashed #d1d5db",
-                                fontSize: "12px",
-                                color: "#9ca3af",
-                            }}
-                        >
-                            Your Logo
-                        </div>
-                    )}
-                </div>
-            );
-
         case "footer": {
             const footerStyle: React.CSSProperties = {
                 color: block.color,

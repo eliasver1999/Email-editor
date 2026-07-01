@@ -12,7 +12,6 @@ export type BlockType =
     | "social"
     | "heading"
     | "html"
-    | "logo"
     | "footer"
     | "quote"
     | "file";
@@ -146,16 +145,6 @@ export interface HtmlBlock extends BaseBlock {
     css: string; // raw CSS, emitted in a <style> tag (hoisted to the email <head> on export)
 }
 
-export interface LogoBlock extends BaseBlock {
-    type: "logo";
-    src: string;
-    alt: string;
-    href: string;
-    width: number; // px
-    border: BorderStyle;
-    align: "left" | "center" | "right";
-}
-
 export interface FooterBlock extends BaseBlock {
     type: "footer";
     content: string; // HTML
@@ -213,7 +202,6 @@ export type EmailBlock =
     | ColumnsBlock
     | SocialBlock
     | HtmlBlock
-    | LogoBlock
     | FooterBlock
     | QuoteBlock
     | FileBlock;
@@ -316,7 +304,6 @@ export const BLOCK_CATALOG: BlockCatalogItem[] = [
     { type: "spacer", label: "Spacer", description: "Empty vertical space", icon: "MoveVertical", category: "layout" },
     { type: "columns", label: "Columns", description: "Multi-column layout", icon: "Columns3", category: "layout" },
     { type: "social", label: "Social Links", description: "Social media icons", icon: "Share2", category: "media" },
-    { type: "logo", label: "Logo", description: "Brand logo with optional link", icon: "Crown", category: "media" },
     { type: "quote", label: "Quote", description: "Blockquote with author", icon: "Quote", category: "content" },
     { type: "footer", label: "Footer", description: "Email footer with small text", icon: "PanelBottom", category: "layout" },
     { type: "file", label: "File / Download", description: "Link to a downloadable file", icon: "FileDown", category: "content" },

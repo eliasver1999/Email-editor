@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import { EmailBlock, CustomBlock, Padding, TextBlock, HeadingBlock, ImageBlock, ButtonBlock, DividerBlock, SpacerBlock, SocialBlock, HtmlBlock, LogoBlock, FooterBlock, QuoteBlock, ColumnsBlock, ColumnConfig, EmailSettings, MergeFieldGroup, BorderStyle, DEFAULT_BORDER, resolveButtonWidth, FileBlock } from "../types";
+import { EmailBlock, CustomBlock, Padding, TextBlock, HeadingBlock, ImageBlock, ButtonBlock, DividerBlock, SpacerBlock, SocialBlock, HtmlBlock, FooterBlock, QuoteBlock, ColumnsBlock, ColumnConfig, EmailSettings, MergeFieldGroup, BorderStyle, DEFAULT_BORDER, resolveButtonWidth, FileBlock } from "../types";
 import { Input, Label, Button, Slider, ScrollArea, Separator, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Popover, PopoverContent, PopoverTrigger, Tabs, TabsList, TabsTrigger, TabsContent } from "../ui/primitives";
 import { CodeEditor } from "../ui/CodeEditor";
 import { useTr } from "../i18n";
@@ -143,7 +143,6 @@ export function PropertyPanel({ block, onUpdate, onDelete, onDuplicate, onToggle
                             {block.type === "spacer" && <SpacerProps block={block} update={update} />}
                             {block.type === "social" && <SocialProps block={block} update={update} />}
                             {block.type === "html" && <HtmlProps block={block} update={update} />}
-                            {block.type === "logo" && <LogoProps block={block} update={update} />}
                             {block.type === "footer" && <FooterProps block={block} update={update} />}
                             {block.type === "quote" && <QuoteProps block={block} update={update} />}
                             {block.type === "columns" && <ColumnsProps block={block} update={update} />}
@@ -586,34 +585,6 @@ function HtmlProps({ block, update }: { block: HtmlBlock; update: (u: Partial<Ht
                     </p>
                 </TabsContent>
             </Tabs>
-        </div>
-    );
-}
-
-function LogoProps({ block, update }: { block: LogoBlock; update: (u: Partial<LogoBlock>) => void }) {
-    const tr = useTr();
-    const border = block.border ?? DEFAULT_BORDER;
-    return (
-        <div className="space-y-3">
-            <div>
-                <Label className="text-xs">{tr("emailBuilder.prop.logoUrl", "Logo URL")}</Label>
-                <ImageInput value={block.src} onChange={(src) => update({ src })} />
-            </div>
-            <div>
-                <Label className="text-xs">{tr("emailBuilder.prop.altText", "Alt Text")}</Label>
-                <Input className="h-8 mt-1 text-xs" value={block.alt} onChange={(e) => update({ alt: e.target.value })} />
-            </div>
-            <div>
-                <Label className="text-xs">{tr("emailBuilder.prop.linkUrl", "Link URL")}</Label>
-                <Input className="h-8 mt-1 text-xs" placeholder="https://..." value={block.href} onChange={(e) => update({ href: e.target.value })} />
-            </div>
-            <SliderField label={tr("emailBuilder.prop.width", "Width")} value={block.width} min={50} max={400} onChange={(v) => update({ width: v })} suffix="px" />
-            <AlignSelect value={block.align} onChange={(v) => update({ align: v })} />
-            <SliderField label={tr("emailBuilder.prop.borderWidth", "Border Width")} value={border.width} min={0} max={10} onChange={(v) => update({ border: { ...border, width: v } })} suffix="px" />
-            {border.width > 0 && (
-                <ColorInput label={tr("emailBuilder.prop.borderColor", "Border Color")} value={border.color} onChange={(v) => update({ border: { ...border, color: v } })} />
-            )}
-            <SliderField label={tr("emailBuilder.prop.borderRadius", "Border Radius")} value={border.radius} min={0} max={50} onChange={(v) => update({ border: { ...border, radius: v } })} suffix="px" />
         </div>
     );
 }

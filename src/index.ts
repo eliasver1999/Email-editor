@@ -24,7 +24,6 @@ export type {
     ColumnsBlock,
     SocialBlock,
     HtmlBlock,
-    LogoBlock,
     FooterBlock,
     QuoteBlock,
     FileBlock,

@@ -10,7 +10,6 @@ import {
     ColumnsBlock,
     SocialBlock,
     HtmlBlock,
-    LogoBlock,
     FooterBlock,
     QuoteBlock,
     FileBlock,
@@ -34,7 +33,6 @@ export function createBlock(type: BlockType): EmailBlock {
         columns: createColumnsBlock,
         social: createSocialBlock,
         html: createHtmlBlock,
-        logo: createLogoBlock,
         footer: createFooterBlock,
         quote: createQuoteBlock,
         file: createFileBlock,
@@ -44,7 +42,7 @@ export function createBlock(type: BlockType): EmailBlock {
 
 /**
  * The starter layout shown when `<EmailBuilder>` mounts without an
- * `initialDocument` — a simple, editable skeleton (logo → headline → body →
+ * `initialDocument` — a simple, editable skeleton (image → headline → body →
  * call-to-action → divider → footer) so users don't face a blank canvas. Pass an
  * explicit document (even `{ settings, blocks: [] }`) to start blank instead.
  */
@@ -52,7 +50,7 @@ export function createStarterDocument(): EmailDocument {
     return {
         settings: { ...DEFAULT_SETTINGS },
         blocks: [
-            createLogoBlock(),
+            { ...createImageBlock(), width: 30, padding: { top: 24, right: 20, bottom: 8, left: 20 } },
             { ...createHeadingBlock(), content: "Your headline goes here" },
             { ...createTextBlock(), content: "<p>Write a short, friendly message to your readers here. You can format text, add links, images, buttons, and more.</p>" },
             createButtonBlock(),
@@ -209,21 +207,6 @@ export function createHtmlBlock(): HtmlBlock {
         content: "<!-- Custom HTML here -->",
         css: "",
         padding: { ...DEFAULT_PADDING },
-        backgroundColor: "transparent",
-    };
-}
-
-export function createLogoBlock(): LogoBlock {
-    return {
-        id: nanoid(8),
-        type: "logo",
-        src: "",
-        alt: "Logo",
-        href: "",
-        width: 150,
-        border: { ...DEFAULT_BORDER },
-        align: "center",
-        padding: { top: 20, right: 20, bottom: 20, left: 20 },
         backgroundColor: "transparent",
     };
 }
