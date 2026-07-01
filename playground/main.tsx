@@ -146,14 +146,14 @@ function App() {
         <div style={{ fontFamily: FONT, background: "#fff" }}>
             <Nav />
             <Hero />
-            <section style={{ maxWidth: 1320, margin: "0 auto", padding: "0 16px" }}>
-                <div style={{ padding: "30px 4px 16px" }}>
-                    <h2 style={{ margin: 0, fontSize: 22, fontWeight: 800, color: "#0f172a", letterSpacing: "-0.01em" }}>Live editor</h2>
-                    <p style={{ margin: "6px 0 0", fontSize: 14, color: "#64748b" }}>
-                        Drag blocks from the left, edit on the canvas, switch languages in the toolbar, then open the <strong style={{ color: "#334155" }}>HTML</strong> tab to see the exported email.
-                    </p>
-                </div>
-                <div style={{ border: "1px solid #e5e7eb", borderRadius: 12, overflow: "hidden", boxShadow: "0 12px 32px -14px rgba(15,23,42,0.22)", marginBottom: 44, background: "#fff" }}>
+            <div style={{ maxWidth: 880, margin: "0 auto", padding: "30px 20px 16px" }}>
+                <h2 style={{ margin: 0, fontSize: 22, fontWeight: 800, color: "#0f172a", letterSpacing: "-0.01em" }}>Live editor</h2>
+                <p style={{ margin: "6px 0 0", fontSize: 14, color: "#64748b" }}>
+                    Drag blocks from the left, edit on the canvas, switch languages in the toolbar, then open the <strong style={{ color: "#334155" }}>HTML</strong> tab to see the exported email.
+                </p>
+            </div>
+            {/* Full-width editor — no max-width wrapper so it uses the whole page. */}
+            <div style={{ borderTop: "1px solid #e5e7eb", borderBottom: "1px solid #e5e7eb", background: "#fff" }}>
             <EmailBuilder
                 initialDocument={doc}
                 locales={[
@@ -194,8 +194,7 @@ function App() {
                         .replaceAll("{{email}}", "maria@example.com")
                 }
             />
-                </div>
-            </section>
+            </div>
             <Footer />
             <EmailBuilderToaster />
         </div>
