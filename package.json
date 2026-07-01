@@ -1,6 +1,6 @@
 {
   "name": "email-block-builder",
-  "version": "0.8.1",
+  "version": "0.9.0",
   "description": "Framework-agnostic drag-and-drop email builder for React. Themable, localizable, exports email-safe HTML.",
   "type": "module",
   "license": "MIT",
