@@ -60,10 +60,14 @@ That's it — the editor is fully styled (it renders inside a `.email-builder` r
 Render a saved design to HTML anywhere (server or client) — no React tree needed:
 
 ```ts
-import { renderToHtml, type EmailDocument } from "email-block-builder";
+import { renderToHtml, renderToText, type EmailDocument } from "email-block-builder";
 
-const html = renderToHtml(savedDocument as EmailDocument);
+const doc = savedDocument as EmailDocument;
+const html = renderToHtml(doc);
+const text = renderToText(doc); // plain-text alternative for the multipart email
 ```
+
+`renderToText` produces a readable `text/plain` part (better deliverability + accessibility): headings/paragraphs, `- ` bullet lists, `text (url)` links, `label: url` buttons, `"quote" — author`, and `---` dividers; images become their alt text, hidden blocks and merge tags are handled. Send both parts (`text/plain` + `text/html`) as a multipart alternative. Custom blocks render via an optional `toText` on `defineBlock` (skipped otherwise).
 
 ## Merge tags (personalization)
 

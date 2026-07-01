@@ -5,6 +5,8 @@ export type { EmailBuilderProps, MultiLocaleSaveMeta } from "./EmailBuilder";
 export { EmailBuilderToaster } from "./ui/Toaster";
 export { renderToHtml, renderEmailHtml, exportToJson, importFromJson, defineBlock } from "./renderer/toHtml";
 export type { BlockRenderer, BlockDefinition, BlockRenderContext, RenderOptions } from "./renderer/toHtml";
+export { renderToText } from "./renderer/toText";
+export type { RenderTextOptions } from "./renderer/toText";
 export { createBlock, createStarterDocument } from "./defaults";
 export { validate } from "./validate";
 export type { ValidationIssue, ValidationLevel, ValidateOptions } from "./validate";

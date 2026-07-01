@@ -217,6 +217,8 @@ export interface BlockDefinition<B extends AnyBlock = CustomBlock> extends Block
     Canvas?: (props: { block: B; editing: boolean }) => React.ReactNode;
     /** The block's property-panel editor. Falls back to a "no editor" notice. */
     Editor?: (props: { block: B; update: (updates: Partial<B>) => void }) => React.ReactNode;
+    /** Optional plain-text rendering for `renderToText` (the multipart text/plain part). Omit to skip the block in text. */
+    toText?: (block: B) => string;
 }
 
 /** Options for `renderToHtml` / `renderEmailHtml`. */
