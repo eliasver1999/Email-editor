@@ -51,6 +51,7 @@
     "build:demo": "vite build --base=/Email-editor/",
     "preview:demo": "vite preview --base=/Email-editor/",
     "email:sample": "node scripts/render-sample.mjs",
+    "validate:sample": "node scripts/validate-sample.mjs",
     "test": "vitest run",
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit",

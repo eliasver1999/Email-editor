@@ -9,27 +9,11 @@ import { writeFileSync, mkdirSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { renderToHtml, createBlock, DEFAULT_SETTINGS } from "../dist/index.js";
+import { buildSampleDoc } from "./sample-doc.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
 
-// A two-column row demonstrates the responsive stacking on phones.
-const columns = createBlock("columns");
-columns.columns[0].blocks = [createBlock("heading"), createBlock("text")];
-columns.columns[1].blocks = [createBlock("image")];
-
-const doc = {
-    settings: { ...DEFAULT_SETTINGS, preheaderText: "A sample email from email-block-builder" },
-    blocks: [
-        createBlock("image"),
-        createBlock("heading"),
-        createBlock("text"),
-        columns,
-        createBlock("button"),
-        createBlock("divider"),
-        createBlock("quote"),
-        createBlock("footer"),
-    ],
-};
+const doc = buildSampleDoc({ createBlock, DEFAULT_SETTINGS });
 
 const html = renderToHtml(doc);
 const out = resolve(here, "../examples/sample-email.html");
