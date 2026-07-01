@@ -1228,8 +1228,12 @@ export function EmailBuilder({ initialDocument, locales, initialDocuments, defau
                                         className="block w-full bg-white"
                                         style={{ height: previewHeight, border: 0 }}
                                         onLoad={(e) => {
+                                            // Size the iframe to the email's exact height so the
+                                            // preview matches the delivered email with no extra
+                                            // slack. scrollHeight already includes the wrapper's
+                                            // 20px top/bottom padding from the compiled HTML.
                                             const body = e.currentTarget.contentDocument?.body;
-                                            if (body) setPreviewHeight(body.scrollHeight + 8);
+                                            if (body) setPreviewHeight(body.scrollHeight);
                                         }}
                                     />
                                 )}

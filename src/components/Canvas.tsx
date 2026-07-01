@@ -276,13 +276,12 @@ export function Canvas({ blocks, settings, selectedBlockId, onSelectBlock, isPre
             }}
         >
             <div
-                className={cn("eb-content-css mx-auto my-6 flex flex-col", shadow && "shadow-lg")}
+                className={cn("eb-content-css mx-auto my-5 flex flex-col", shadow && "shadow-lg")}
                 style={{
                     maxWidth: `${settings.contentWidth}px`,
                     backgroundColor: settings.contentBackgroundColor,
                     fontFamily: settings.fontFamily,
                     color: settings.textColor,
-                    minHeight: "500px",
                     border: settings.contentBorder && settings.contentBorder.width > 0 && settings.contentBorder.style !== "none"
                         ? `${settings.contentBorder.width}px ${settings.contentBorder.style} ${settings.contentBorder.color}`
                         : undefined,
@@ -359,8 +358,11 @@ export function Canvas({ blocks, settings, selectedBlockId, onSelectBlock, isPre
                             <div
                                 ref={setCanvasRef}
                                 className={cn(
+                                    // Idle: no reserved space so the content box hugs
+                                    // its blocks (matching the preview/email). While
+                                    // dragging, expand into a generous end-drop target.
                                     "flex-1 transition-all",
-                                    isDragging ? "min-h-[120px]" : "min-h-[60px]"
+                                    isDragging ? "min-h-[120px]" : "min-h-0"
                                 )}
                             >
                                 <div className="mx-4">

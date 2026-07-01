@@ -103,7 +103,7 @@ export function Slider({ value, min, max, step = 1, onValueChange, className }: 
                 className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
             />
             <div
-                className="absolute h-4 w-4 rounded-full border border-primary/50 bg-background shadow transition-colors"
+                className="pointer-events-none absolute h-4 w-4 rounded-full border border-primary/50 bg-background shadow transition-colors"
                 style={{ left: `calc(${percent}% - 8px)` }}
             />
         </div>
