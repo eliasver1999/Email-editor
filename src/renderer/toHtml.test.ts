@@ -105,6 +105,25 @@ describe("renderToHtml", () => {
         });
     });
 
+    describe("per-block CSS classes", () => {
+        it("tags each block row with eb-block + eb-block-<type> (type hooks)", () => {
+            const html = renderToHtml(makeDoc([createBlock("text"), createBlock("button")]));
+            expect(html).toContain('class="eb-block eb-block-text"');
+            expect(html).toContain("eb-block eb-block-button"); // button row (transparent) carries it too
+        });
+
+        it("appends a user-supplied class", () => {
+            const html = renderToHtml(makeDoc([{ ...createTextBlock(), className: "promo-cta" }]));
+            expect(html).toContain('class="eb-block eb-block-text promo-cta"');
+        });
+
+        it("strips unsafe characters from the user class (no attribute breakout)", () => {
+            const html = renderToHtml(makeDoc([{ ...createTextBlock(), className: 'x"><b' }]));
+            expect(html).not.toContain('"><b');
+            expect(html).toContain("eb-block eb-block-text xb");
+        });
+    });
+
     describe("content border + text defaults", () => {
         it("renders the content border + radius with separate border-collapse so the radius can apply", () => {
             const html = renderToHtml(makeDoc([createBlock("text")], { contentBorder: { width: 2, style: "solid", color: "#e5e7eb", radius: 16 } }));

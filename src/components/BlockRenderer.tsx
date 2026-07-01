@@ -270,7 +270,11 @@ export function BlockRenderer({ block, isSelected, onClick, isEditing, onEditCon
     };
 
     return (
-        <div style={wrapperStyle} onClick={(e) => { e.stopPropagation(); onClick?.(); }}>
+        <div
+            className={cn("eb-block", `eb-block-${block.type}`, block.className)}
+            style={wrapperStyle}
+            onClick={(e) => { e.stopPropagation(); onClick?.(); }}
+        >
             {block.locked && isEditing && <LockBadge bg={block.backgroundColor} />}
             {customDef
                 ? customDef.Canvas

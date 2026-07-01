@@ -123,6 +123,20 @@ Override any CSS variable on `.email-builder` (or a parent). Add a `.dark` class
 }
 ```
 
+## Styling blocks with Custom CSS
+
+The document **Custom CSS** field (Email settings) is injected into the email `<head>` and applied live on the canvas. Every block's row carries hooks you can target:
+
+- `.eb-block` — every block; `.eb-block-<type>` — all blocks of a type (`.eb-block-button`, `.eb-block-text`, …).
+- A per-block **CSS class** (set in the block's Properties panel) — target one specific block.
+
+```css
+.eb-block-button a { text-transform: uppercase !important; }  /* all buttons */
+.promo-cta a       { background: #111 !important; }           /* one tagged block */
+```
+
+Note: blocks set their base styles inline, so use `!important` (or properties the block doesn't set) to override. And email clients vary in `<style>` support — the Preview is the source of truth, and inline styles are safest for the actual inbox.
+
 ## Localization
 
 The editor ships English text by default. Pass a `t(key)` function to translate its UI — it falls back to English for any missing key. Keys live under the `emailBuilder.*` namespace.

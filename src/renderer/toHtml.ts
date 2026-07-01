@@ -156,9 +156,17 @@ function sanitizeCss(css: string): string {
     return css.replace(/</g, "");
 }
 
-function wrapRow(content: string, block: { padding: Padding; backgroundColor: string }): string {
+/** Class list for a block's row: `eb-block eb-block-<type>` plus the user's own
+ *  class(es). Document Custom CSS can target these (e.g. `.eb-block-button a {}`
+ *  or `.my-class {}`). User class is restricted to safe class-name chars. */
+function blockClass(type?: string, className?: string): string {
+    const safe = (className ?? "").replace(/[^\w\s-]/g, "").trim();
+    return ["eb-block", type && `eb-block-${type}`, safe].filter(Boolean).join(" ");
+}
+
+function wrapRow(content: string, block: { padding: Padding; backgroundColor: string; type?: string; className?: string }): string {
     const bg = block.backgroundColor !== "transparent" ? `background-color:${block.backgroundColor};` : "";
-    return `<tr><td style="padding:${pad(block.padding)};${bg}">${content}</td></tr>`;
+    return `<tr><td class="${blockClass(block.type, block.className)}" style="padding:${pad(block.padding)};${bg}">${content}</td></tr>`;
 }
 
 // ============================================================
@@ -276,7 +284,7 @@ const BUILTIN_RENDERERS: BlockRenderer[] = [
                 `<a href="${ctx.escapeHtml(block.href)}" target="_blank" style="${widthAttr}background-color:${block.backgroundColor};color:${block.color};font-size:${block.fontSize}px;font-family:${block.fontFamily};border-radius:${block.borderRadius}px;padding:12px 28px;text-decoration:none;font-weight:bold;text-align:center;mso-padding-alt:0;">${ctx.escapeHtml(block.text)}</a>` +
                 `<!--[if mso]></center></v:roundrect><![endif]-->` +
                 `</div>`,
-                { padding: block.padding, backgroundColor: "transparent" },
+                { padding: block.padding, backgroundColor: "transparent", type: block.type, className: block.className },
             );
         },
     }),
@@ -301,7 +309,7 @@ const BUILTIN_RENDERERS: BlockRenderer[] = [
     }),
     defineBlock<SpacerBlock>({
         type: "spacer",
-        toHtml: (block) => `<tr><td style="height:${block.height}px;font-size:0;line-height:0;">&nbsp;</td></tr>`,
+        toHtml: (block) => `<tr><td class="${blockClass(block.type, block.className)}" style="height:${block.height}px;font-size:0;line-height:0;">&nbsp;</td></tr>`,
     }),
     defineBlock<ColumnsBlock>({
         type: "columns",

@@ -45,6 +45,8 @@ export interface BaseBlock {
     hidden?: boolean;
     /** When true, restricted editors (canManageLocks=false) can't edit/move/delete it. */
     locked?: boolean;
+    /** Extra CSS class(es) added to the block's row, so document Custom CSS can target this specific block (e.g. `promo-cta`). */
+    className?: string;
 }
 
 // --- Concrete blocks ---

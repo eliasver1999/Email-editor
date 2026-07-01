@@ -174,6 +174,19 @@ export function PropertyPanel({ block, onUpdate, onDelete, onDuplicate, onToggle
                         <h4 className="text-xs font-medium text-muted-foreground mb-2">{tr("emailBuilder.prop.background", "BACKGROUND")}</h4>
                         <ColorInput label={tr("emailBuilder.prop.color", "Color")} value={block.backgroundColor} onChange={(v) => update({ backgroundColor: v })} />
                     </div>
+
+                    <div>
+                        <h4 className="text-xs font-medium text-muted-foreground mb-2">{tr("emailBuilder.prop.cssClassHeading", "CSS CLASS")}</h4>
+                        <Input
+                            className="h-8 text-xs"
+                            placeholder={tr("emailBuilder.prop.cssClassPlaceholder", "e.g. promo-cta")}
+                            value={block.className ?? ""}
+                            onChange={(e) => update({ className: e.target.value })}
+                        />
+                        <p className="mt-1 text-[10px] leading-snug text-muted-foreground">
+                            {tr("emailBuilder.prop.cssClassHint", "Target this block from Custom CSS — e.g. .promo-cta, or .eb-block-button for all buttons.")}
+                        </p>
+                    </div>
                 </div>
                 )}
             </ScrollArea>
