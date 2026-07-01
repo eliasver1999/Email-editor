@@ -58,7 +58,31 @@ export function renderToHtml(doc: { settings: EmailSettings; blocks: AnyBlock[] 
 
     const visibleBlocks = blocks.filter((b) => !b.hidden);
 
-    const bodyContent = visibleBlocks.map((b) => renderOne(b, settings, registry)).join("\n");
+    // Optional border around the content area (from Email settings).
+    const cb = settings.contentBorder ?? DEFAULT_BORDER;
+    const borderW = cb.width > 0 && cb.style !== "none" ? cb.width : 0;
+    const contentBorderCss =
+        (borderW > 0 ? `border:${cb.width}px ${cb.style} ${cb.color};` : "") +
+        (cb.radius > 0 ? `border-radius:${cb.radius}px;` : "");
+
+    // A rounded content area clips the container <table>'s own border/background,
+    // but NOT its child cells — so a first/last block with a background color
+    // would poke square corners over the rounded edge. Round the top corners of
+    // the first cell and the bottom corners of the last cell to the border's
+    // inner radius (radius − border width) so the fills follow the curve.
+    const innerRadius = Math.max(0, cb.radius - borderW);
+    const injectStyle = (html: string, css: string) =>
+        html.replace(/(<td\b[^>]*\bstyle=")/, `$1${css}`);
+    const bodyContent = visibleBlocks
+        .map((b, i) => {
+            let html = renderOne(b, settings, registry);
+            if (innerRadius > 0) {
+                if (i === 0) html = injectStyle(html, `border-top-left-radius:${innerRadius}px;border-top-right-radius:${innerRadius}px;`);
+                if (i === visibleBlocks.length - 1) html = injectStyle(html, `border-bottom-left-radius:${innerRadius}px;border-bottom-right-radius:${innerRadius}px;`);
+            }
+            return html;
+        })
+        .join("\n");
 
     // Custom CSS (document-level setting + each HTML block's CSS) is hoisted into
     // <head> — the most widely supported place for <style> in email (vs. inline
@@ -68,12 +92,6 @@ export function renderToHtml(doc: { settings: EmailSettings; blocks: AnyBlock[] 
         .map((b) => (b.css ?? "").trim())
         .filter(Boolean);
     const customCss = sanitizeCss([(settings.customCss ?? "").trim(), ...blockCss].filter(Boolean).join("\n\n"));
-
-    // Optional border around the content area (from Email settings).
-    const cb = settings.contentBorder ?? DEFAULT_BORDER;
-    const contentBorderCss =
-        (cb.width > 0 && cb.style !== "none" ? `border:${cb.width}px ${cb.style} ${cb.color};` : "") +
-        (cb.radius > 0 ? `border-radius:${cb.radius}px;` : "");
 
     return `<!DOCTYPE html>
 <html lang="en" xmlns="http://www.w3.org/1999/xhtml">

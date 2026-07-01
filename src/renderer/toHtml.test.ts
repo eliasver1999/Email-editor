@@ -132,6 +132,21 @@ describe("renderToHtml", () => {
             expect(html).toContain("border-radius:16px");
         });
 
+        it("rounds the first cell's top corners and last cell's bottom corners to the border's inner radius, so colored blocks don't overrun the rounded container", () => {
+            const html = renderToHtml(
+                makeDoc([createBlock("heading"), createBlock("text")], { contentBorder: { width: 2, style: "solid", color: "#000", radius: 16 } }),
+            );
+            // inner radius = radius(16) − border width(2) = 14
+            expect(html).toContain("border-top-left-radius:14px;border-top-right-radius:14px;");
+            expect(html).toContain("border-bottom-left-radius:14px;border-bottom-right-radius:14px;");
+        });
+
+        it("does not add corner radii when the content area has no border-radius", () => {
+            const html = renderToHtml(makeDoc([createBlock("heading"), createBlock("text")]));
+            expect(html).not.toContain("border-top-left-radius");
+            expect(html).not.toContain("border-bottom-left-radius");
+        });
+
         it("gives a new text block default padding (not flush to the email edges)", () => {
             const html = renderToHtml(makeDoc([createTextBlock()]));
             expect(html).toContain("padding:8px 24px 8px 24px");

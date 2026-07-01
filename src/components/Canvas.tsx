@@ -290,6 +290,10 @@ export function Canvas({ blocks, settings, selectedBlockId, onSelectBlock, isPre
                         ? `${settings.contentBorder.width}px ${settings.contentBorder.style} ${settings.contentBorder.color}`
                         : undefined,
                     borderRadius: settings.contentBorder && settings.contentBorder.radius > 0 ? settings.contentBorder.radius : undefined,
+                    // Clip block backgrounds to the rounded corners so a colored
+                    // first/last block doesn't poke square corners over the radius
+                    // (the email output rounds the first/last cell to match).
+                    overflow: settings.contentBorder && settings.contentBorder.radius > 0 ? "hidden" : undefined,
                 }}
             >
                 {/* Document Custom CSS, scoped to the canvas content so editing is
