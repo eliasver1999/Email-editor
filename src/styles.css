@@ -23,6 +23,16 @@
     pointer-events: none;
 }
 
+/* Show links in the edit canvas the way the email will render them — Tailwind's
+   reset otherwise makes <a> inherit the text color with no underline, so a linked
+   word looks like plain text. `--eb-link-color` is set from settings.linkColor by
+   the Canvas; buttons keep their own inline styling and are unaffected. */
+.email-builder .eb-content-css .eb-block-text a,
+.email-builder .eb-content-css .eb-block-footer a {
+    color: var(--eb-link-color, #2563eb);
+    text-decoration: underline;
+}
+
 .email-builder {
     /* Base */
     --background: 0 0% 100%;

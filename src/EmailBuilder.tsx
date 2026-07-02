@@ -38,6 +38,7 @@ import {
     AlertOctagon,
     Info,
     CircleCheck,
+    Keyboard,
 } from "lucide-react";
 import { cn } from "./ui/utils";
 import { useToast, useUnsavedChanges } from "./ui/hooks";
@@ -218,6 +219,21 @@ function themeToStyle(theme?: EmailBuilderTheme): React.CSSProperties {
 
 const MAX_HISTORY = 50;
 
+/** A styled keycap. */
+function Kbd({ children }: { children: React.ReactNode }) {
+    return <kbd className="rounded border bg-muted px-1.5 py-0.5 text-[10px] font-medium leading-none text-muted-foreground">{children}</kbd>;
+}
+
+/** One row in the keyboard-shortcuts reference. */
+function ShortcutRow({ label, keys }: { label: string; keys: React.ReactNode }) {
+    return (
+        <div className="flex items-center justify-between gap-4 px-2 py-1.5 text-xs">
+            <span>{label}</span>
+            <span className="flex items-center gap-1 shrink-0">{keys}</span>
+        </div>
+    );
+}
+
 /** An item in the toolbar's "More" overflow menu — runs its action and closes the menu. */
 function MoreMenuItem({ icon, label, onClick }: { icon: React.ReactNode; label: string; onClick: () => void }) {
     const close = usePopoverClose();
@@ -289,6 +305,11 @@ function cloneDoc(doc: EmailDocument): EmailDocument {
 export function EmailBuilder({ initialDocument, locales, initialDocuments, defaultLocale, onChange, onSave, onBack, fieldGroups, previewSubstitute, onImageUpload, onFileUpload, canvasShadow, canManageLocks = true, customBlocks, t, theme, dark, className }: EmailBuilderProps) {
     const { toast } = useToast();
     const tr = useMemo(() => makeTr(t), [t]);
+    // "⌘" on Apple platforms, "Ctrl" elsewhere — for the shortcuts reference.
+    const mod = useMemo(
+        () => (typeof navigator !== "undefined" && /Mac|iPhone|iPad|iPod/.test(navigator.platform || navigator.userAgent || "")) ? "⌘" : "Ctrl",
+        [],
+    );
 
     // Multi-language: a non-empty `locales` list turns on per-language designs.
     const localeList = useMemo(() => locales ?? [], [locales]);
@@ -1149,6 +1170,27 @@ export function EmailBuilder({ initialDocument, locales, initialDocuments, defau
                                         })}
                                     </div>
                                 )}
+                            </PopoverContent>
+                        </Popover>
+                        <Popover>
+                            <PopoverTrigger asChild>
+                                <Button variant="ghost" size="icon" className="h-7 w-7" title={tr("emailBuilder.shortcuts", "Keyboard shortcuts")}>
+                                    <Keyboard className="h-3.5 w-3.5" />
+                                </Button>
+                            </PopoverTrigger>
+                            <PopoverContent align="end" className="w-64 p-0">
+                                <div className="px-3 py-2 border-b text-xs font-semibold">{tr("emailBuilder.shortcuts", "Keyboard shortcuts")}</div>
+                                <div className="p-1">
+                                    <ShortcutRow label={tr("emailBuilder.shortcut.undo", "Undo")} keys={<><Kbd>{mod}</Kbd><Kbd>Z</Kbd></>} />
+                                    <ShortcutRow label={tr("emailBuilder.shortcut.redo", "Redo")} keys={<><Kbd>{mod}</Kbd><Kbd>⇧</Kbd><Kbd>Z</Kbd></>} />
+                                    <ShortcutRow label={tr("emailBuilder.shortcut.save", "Save")} keys={<><Kbd>{mod}</Kbd><Kbd>S</Kbd></>} />
+                                    <ShortcutRow label={tr("emailBuilder.shortcut.duplicate", "Duplicate block")} keys={<><Kbd>{mod}</Kbd><Kbd>D</Kbd></>} />
+                                    <ShortcutRow label={tr("emailBuilder.shortcut.delete", "Delete block")} keys={<><Kbd>Del</Kbd></>} />
+                                    <ShortcutRow label={tr("emailBuilder.shortcut.moveUp", "Move block up")} keys={<><Kbd>{mod}</Kbd><Kbd>↑</Kbd></>} />
+                                    <ShortcutRow label={tr("emailBuilder.shortcut.moveDown", "Move block down")} keys={<><Kbd>{mod}</Kbd><Kbd>↓</Kbd></>} />
+                                    <ShortcutRow label={tr("emailBuilder.shortcut.deselect", "Deselect")} keys={<><Kbd>Esc</Kbd></>} />
+                                    <ShortcutRow label={tr("emailBuilder.shortcut.togglePreview", "Toggle preview")} keys={<><Kbd>{mod}</Kbd><Kbd>⇧</Kbd><Kbd>P</Kbd></>} />
+                                </div>
                             </PopoverContent>
                         </Popover>
                         <Button variant="ghost" size="sm" className="h-7 px-2 gap-1 text-xs" onClick={() => setSelectedBlockId(null)} title={tr("emailBuilder.settings", "Email settings")}>

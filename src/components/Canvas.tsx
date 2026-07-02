@@ -286,6 +286,9 @@ export function Canvas({ blocks, settings, selectedBlockId, onSelectBlock, isPre
                     backgroundColor: settings.contentBackgroundColor,
                     fontFamily: settings.fontFamily,
                     color: settings.textColor,
+                    // Drives the edit-canvas link color (see styles.css) so links
+                    // look the same as in the preview/email.
+                    ["--eb-link-color" as string]: settings.linkColor,
                     border: settings.contentBorder && settings.contentBorder.width > 0 && settings.contentBorder.style !== "none"
                         ? `${settings.contentBorder.width}px ${settings.contentBorder.style} ${settings.contentBorder.color}`
                         : undefined,

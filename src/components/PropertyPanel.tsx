@@ -5,7 +5,7 @@ import { CodeEditor } from "../ui/CodeEditor";
 import { LinkEditor } from "./LinkEditor";
 import { useTr } from "../i18n";
 import { useImageUpload, useFileUpload } from "../upload";
-import { useCustomBlocks, useEditorSelection } from "../editor-context";
+import { useCustomBlocks, useEditorSelection, useFieldGroups } from "../editor-context";
 import type { BlockDefinition } from "../renderer/toHtml";
 import { toast } from "../ui/hooks";
 import {
@@ -25,16 +25,22 @@ import {
     Link,
 } from "lucide-react";
 
-/** Popover menu of personalization tokens; clicking one inserts it. */
-function InsertFieldMenu({ fieldGroups, onInsert }: { fieldGroups: MergeFieldGroup[]; onInsert: (token: string) => void }) {
+/** Popover menu of personalization tokens; clicking one inserts it. `compact` renders an icon-only trigger for inline use next to a field. */
+function InsertFieldMenu({ fieldGroups, onInsert, compact }: { fieldGroups: MergeFieldGroup[]; onInsert: (token: string) => void; compact?: boolean }) {
     const tr = useTr();
     return (
         <Popover>
             <PopoverTrigger asChild>
-                <Button variant="outline" size="sm" className="h-7 px-2 text-xs gap-1">
-                    <Braces className="h-3 w-3" />
-                    {tr("emailBuilder.prop.insertField", "Insert field")}
-                </Button>
+                {compact ? (
+                    <Button variant="outline" size="icon" className="h-8 w-8 shrink-0" title={tr("emailBuilder.prop.insertField", "Insert field")}>
+                        <Braces className="h-3.5 w-3.5" />
+                    </Button>
+                ) : (
+                    <Button variant="outline" size="sm" className="h-7 px-2 text-xs gap-1">
+                        <Braces className="h-3 w-3" />
+                        {tr("emailBuilder.prop.insertField", "Insert field")}
+                    </Button>
+                )}
             </PopoverTrigger>
             <PopoverContent align="start" className="w-56 p-0 max-h-72 overflow-y-auto">
                 {fieldGroups.map((g) => (
@@ -57,6 +63,41 @@ function InsertFieldMenu({ fieldGroups, onInsert }: { fieldGroups: MergeFieldGro
                 ))}
             </PopoverContent>
         </Popover>
+    );
+}
+
+/**
+ * Text field with an optional field-tag inserter for non-contentEditable inputs
+ * (button label/link, image link, …). Inserting a token splices it in at the
+ * input's caret rather than appending, then restores the caret after it. The tag
+ * picker only appears when the host provides personalization `fieldGroups`.
+ */
+function TokenTextInput({ value, onChange, placeholder, className }: {
+    value: string;
+    onChange: (v: string) => void;
+    placeholder?: string;
+    className?: string;
+}) {
+    const fieldGroups = useFieldGroups();
+    const ref = useRef<HTMLInputElement>(null);
+    const insertAtCaret = (token: string) => {
+        const el = ref.current;
+        const start = el && el.selectionStart != null ? el.selectionStart : value.length;
+        const end = el && el.selectionEnd != null ? el.selectionEnd : value.length;
+        onChange(value.slice(0, start) + token + value.slice(end));
+        // Restore the caret just after the inserted token on the next frame.
+        requestAnimationFrame(() => {
+            if (!el) return;
+            el.focus();
+            const pos = start + token.length;
+            el.setSelectionRange(pos, pos);
+        });
+    };
+    return (
+        <div className="mt-1 flex items-center gap-1">
+            <Input ref={ref} className={`h-8 text-xs ${className ?? ""}`} value={value} placeholder={placeholder} onChange={(e) => onChange(e.target.value)} />
+            {fieldGroups.length > 0 && <InsertFieldMenu fieldGroups={fieldGroups} onInsert={insertAtCaret} compact />}
+        </div>
     );
 }
 
@@ -509,7 +550,7 @@ function ImageProps({ block, update }: { block: ImageBlock; update: (u: Partial<
             </div>
             <div>
                 <Label className="text-xs">{tr("emailBuilder.prop.linkUrl", "Link URL")}</Label>
-                <Input className="h-8 mt-1 text-xs" placeholder="https://..." value={block.href} onChange={(e) => update({ href: e.target.value })} />
+                <TokenTextInput value={block.href} onChange={(v) => update({ href: v })} placeholder="https://..." />
             </div>
             <div className="flex items-center gap-2">
                 <input type="checkbox" id="img-full-width" checked={block.width === "auto"} onChange={(e) => update({ width: e.target.checked ? "auto" : 100 })} className="rounded" />
@@ -535,11 +576,11 @@ function ButtonProps({ block, update }: { block: ButtonBlock; update: (u: Partia
         <div className="space-y-3">
             <div>
                 <Label className="text-xs">{tr("emailBuilder.prop.buttonText", "Button Text")}</Label>
-                <Input className="h-8 mt-1 text-sm" value={block.text} onChange={(e) => update({ text: e.target.value })} />
+                <TokenTextInput value={block.text} onChange={(v) => update({ text: v })} />
             </div>
             <div>
                 <Label className="text-xs">{tr("emailBuilder.prop.linkUrl", "Link URL")}</Label>
-                <Input className="h-8 mt-1 text-xs" placeholder="https://..." value={block.href} onChange={(e) => update({ href: e.target.value })} />
+                <TokenTextInput value={block.href} onChange={(v) => update({ href: v })} placeholder="https://..." />
             </div>
             <ColorInput label={tr("emailBuilder.prop.buttonColor", "Button Color")} value={block.backgroundColor} onChange={(v) => update({ backgroundColor: v })} />
             <ColorInput label={tr("emailBuilder.prop.textColor", "Text Color")} value={block.color} onChange={(v) => update({ color: v })} />
