@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import { EmailBlock, CustomBlock, Padding, TextBlock, HeadingBlock, ImageBlock, ButtonBlock, DividerBlock, SpacerBlock, SocialBlock, HtmlBlock, FooterBlock, QuoteBlock, ColumnsBlock, ColumnConfig, EmailSettings, MergeFieldGroup, BorderStyle, DEFAULT_BORDER, resolveButtonWidth, FileBlock } from "../types";
 import { Input, Label, Button, Slider, ScrollArea, Separator, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Popover, PopoverContent, PopoverTrigger, usePopoverClose, Tabs, TabsList, TabsTrigger, TabsContent } from "../ui/primitives";
 import { CodeEditor } from "../ui/CodeEditor";
@@ -968,13 +968,46 @@ function ColorInput({ label, value, onChange }: { label: string; value: string; 
 function SliderField({ label, value, min, max, step = 1, onChange, suffix }: {
     label: string; value: number; min: number; max: number; step?: number; onChange: (v: number) => void; suffix?: string;
 }) {
+    // Local text state so the number field can be typed freely; it syncs from the
+    // slider/external value except while the input is focused, and clamps to
+    // [min, max] on blur/Enter. Live-updates only when the typed value is in range
+    // so partial entries (e.g. "3" toward "325") don't get clamped mid-type.
+    const [text, setText] = useState(String(value));
+    const [editing, setEditing] = useState(false);
+    useEffect(() => { if (!editing) setText(String(value)); }, [value, editing]);
+    const clamp = (n: number) => Math.min(max, Math.max(min, n));
+    const commit = (raw: string) => {
+        const n = parseFloat(raw);
+        if (Number.isNaN(n)) { setText(String(value)); return; }
+        const c = clamp(n);
+        onChange(c);
+        setText(String(c));
+    };
     return (
         <div>
-            <div className="flex items-center justify-between mb-1">
+            <div className="flex items-center justify-between mb-1 gap-2">
                 <Label className="text-xs">{label}</Label>
-                <span className="text-[10px] text-muted-foreground">{value}{suffix}</span>
+                <div className="flex items-center gap-1 shrink-0">
+                    <Input
+                        type="number"
+                        value={text}
+                        min={min}
+                        max={max}
+                        step={step}
+                        onFocus={() => setEditing(true)}
+                        onChange={(e) => {
+                            setText(e.target.value);
+                            const n = parseFloat(e.target.value);
+                            if (!Number.isNaN(n) && n >= min && n <= max) onChange(n);
+                        }}
+                        onBlur={(e) => { setEditing(false); commit(e.target.value); }}
+                        onKeyDown={(e) => { if (e.key === "Enter") { commit(e.currentTarget.value); e.currentTarget.blur(); } }}
+                        className="h-6 w-16 px-1.5 text-[11px] text-right"
+                    />
+                    {suffix && <span className="text-[10px] text-muted-foreground">{suffix}</span>}
+                </div>
             </div>
-            <Slider value={[value]} min={min} max={max} step={step} onValueChange={([v]) => onChange(v)} className="mt-1" />
+            <Slider value={[value]} min={min} max={max} step={step} onValueChange={([v]) => { setText(String(v)); onChange(v); }} />
         </div>
     );
 }
