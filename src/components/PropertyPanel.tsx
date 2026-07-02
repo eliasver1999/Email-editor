@@ -42,7 +42,7 @@ function InsertFieldMenu({ fieldGroups, onInsert, compact }: { fieldGroups: Merg
                     </Button>
                 )}
             </PopoverTrigger>
-            <PopoverContent align="start" className="w-56 p-0 max-h-72 overflow-y-auto">
+            <PopoverContent align={compact ? "end" : "start"} className="w-56 p-0 max-h-72 overflow-y-auto">
                 {fieldGroups.map((g) => (
                     <div key={g.category}>
                         <div className="px-3 pt-2 pb-1 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
